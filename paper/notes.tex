@@ -1,0 +1,55 @@
+\paragraph{Level 0: Baseline (Complete Response, Current Period Only)}.
+
+Horvitz-Thompson Estimator:
+\[ \hat{\mu}_{HT} = \frac{1}{N}\sum_{i\in S}\frac{y_i}{\pi_i} \]
+
+Notation: $U$ = population of size $N$; $S \subseteq U$ = sample of size $n$; $\pi_i = P(i \in S)$ = inclusion probability; $y_i$ = study variable for unit $i$.
+
+\paragraph{Scenario 1: Item Nonresponse.}
+Notation: $r_i = \mathbbm{1}_{\{y_i \text{ observed}\}} \in \{0,1\}$; $S_r = \{i \in S: r_i=1\}$ = respondents; $S_m = \{i \in S: r_i=0\}$ = missing; , $\mathbf{x}_i$ available for all $i \in S$).
+
+Imputed Estimator:
+\[ \hat{\mu}_{\text{imp}} = \frac{1}{N}\left(\sum_{i\in S_r}\frac{y_i}{\pi_i} + \sum_{i\in S_m}\frac{\hat{m}(\mathbf{x}_i)}{\pi_i}\right) \]
+where $\hat{m}(\mathbf{v}_i)$ = imputation model fit on respondents using predictors $\mathbf{v}_i$.
+
+Two-Phase HT Estimator:
+\[ \hat{\mu}_{\text{2HT}} = \frac{1}{N}\sum_{i\in S_r}\frac{y_i}{\pi_i p_i} \]
+where $p_i = P(r_i=1)$ = response probability.
+
+Nonresponse Weighting Adjusted (NWA) Estimator:
+\[ \hat{\mu}_{\text{NWA}} = \frac{1}{N}\sum_{i\in S_r}\frac{y_i}{\pi_i \hat{p}_i} \]
+where $\hat{p}_i$ = estimated response probability.
+
+
+
+\paragraph{Scenario 2: Complete Response with Historical Data.}
+
+Difference Estimator (using lagged outcome):
+\[ \hat{\mu}_{\text{diff}} = \bar{Y}^{(t-1)} + \frac{1}{N}\sum_{i\in S}\frac{y_i - y_i^{(t-1)}}{\pi_i} \]
+where $\bar{Y}^{(t-1)} = N^{-1}\sum_{i\in U} y_i^{(t-1)}$ and $y_i^{(t-1)}$ = outcome from previous census.
+
+Model-Assisted Estimator (using auxiliary variables):
+\[ \hat{\mu}_{\text{MA}} = \frac{1}{N}\sum_{i\in U}\hat{m}_S(y_i^{(t-1), }, \mathbf{v}_i ) + \frac{1}{N}\sum_{i\in S}\frac{y_i - \hat{m}_S(y_i^{(t-1)}, \mathbf{v}_i )}{\pi_i} \]
+where $\mathbf{x}_i$ = auxiliary variables and $\hat{m}_S$ = outcome model fit on sample $S$.
+$\mathbf{v}_i = (\mathbf{z}_i, \mathbf{x}_i^{(t-1)})$ = predictor vector ($\mathbf{z}_i$, $\mathbf{x}_i^{(t-1)})$ available for all $i \in U$.
+
+
+\medskip
+
+\paragraph{Scenario 3: Item Nonresponse (No Historical Data or Auxiliary data)}
+
+Notation: $r_i = \mathbbm{1}_{\{y_i \text{ observed}\}} \in \{0,1\}$; $S_r = \{i \in S: r_i=1\}$ = respondents; $S_m = \{i \in S: r_i=0\}$ = missing; 
+
+Imputed Estimator:
+\[ \hat{\mu}_{\text{imp}} = \frac{1}{N}\left(\sum_{i\in S_r}\frac{y_i}{\pi_i} + \sum_{i\in S_m}\frac{m_s(\mathbf{x}_i)}{\pi_i}\right) \]
+where $m_s(\mathbf{x}_i)$ = imputation model fit on respondents using predictors $\mathbf{x}_i$. This is the same estimator that's proposed by (Dagdoug et al., 2025). 
+
+Nonresponse Weighting Adjusted (NWA) Estimator:
+\[ \hat{\mu}_{\text{NWA}} = \frac{1}{N}\sum_{i\in S_r}\frac{y_i}{\pi_i \hat{p}_i} \]
+where $\hat{p}_i$ = estimated response probability.
+
+\medskip
+
+\paragraph{Scenario 3: Item Nonresponse with Auxiliary data}
+$$\hat{t}_{m_{r},\hat{p}}=\sum_{k\in U}m_{r}(x_{k})+\sum_{k\in s_{r}}\frac{y_{k}-m_{r}(x_{k})}{\pi_{k}\hat{p}_{k}}$$
+Solves $\{p_k\}$ being unknown by using \textit{estimated} $\{\hat{p}_k\}$, using $m_r(\cdot)$ (fit on respondents $s_r$)

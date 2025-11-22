@@ -1,0 +1,36 @@
+\newpage
+\section*{2. (GEMINI 3.0 2025-11-18) The ``Better'' Estimator: Debiased Machine Learning (DML) with PTMs}
+
+The estimators in your table struggle when the models $m(\cdot)$ or $\rho(\cdot)$ are complex (like Deep Learning or Random Forests) because they overfit the data, biasing the final estimate.
+
+If you are using Pre-Trained Models (embeddings) to impute $Y$, you should use \textbf{Debiased Machine Learning (DML)} (also known as Double Machine Learning). This is essentially an upgrade to the AIPW/DR estimator that allows you to use complex AI models safely.
+
+\subsection*{The DML Estimator Formula}
+
+To avoid overfitting, we use \textbf{Cross-Fitting} (Sample Splitting):
+
+\begin{enumerate}
+    \item Split the sample $s$ into $K$ folds.
+    \item For each fold $k$, train your Imputation Model (using PTM embeddings) and Propensity Model on the \textit{other} folds.
+    \item Predict for the current fold $k$.
+\end{enumerate}
+
+The estimator is defined as:
+
+\begin{equation}
+\widehat{T}_{\mathrm{DML}} = \sum_{i \in U} \hat{f}(\mathbf{z}_i) + \sum_{k=1}^K \sum_{i \in s_k} d_i \left[ \left( \hat{y}_i^{(-k)} - \hat{f}(\mathbf{z}_i) \right) + \frac{R_i}{\hat{\pi}_i^{(-k)}} \left( y_i - \hat{y}_i^{(-k)} \right) \right]
+\end{equation}
+
+\noindent Where:
+\begin{itemize}
+    \item $\hat{y}_i^{(-k)}$ is the prediction for unit $i$ using a model trained on data excluding fold $k$.
+    \item $\hat{\pi}_i^{(-k)}$ is the propensity score for unit $i$ trained on data excluding fold $k$.
+    \item $R_i$ is the response indicator ($1$ if respondent, $0$ otherwise).
+\end{itemize}
+
+\subsection*{Why is this better?}
+
+\begin{itemize}
+    \item \textbf{Leverages Embeddings:} You can feed high-dimensional PTM embeddings (Vector $\mathbf{X}$) into $\hat{y}$ without worrying about the ``curse of dimensionality'' biasing your inference.
+    \item \textbf{Error Orthogonality:} DML ensures that the error in your AI model's prediction does not transfer linearly to the error of the population estimate. It converges at rate $\sqrt{n}$ even if the AI model converges slowly.
+\end{itemize}

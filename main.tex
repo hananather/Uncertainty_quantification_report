@@ -1,0 +1,139 @@
+\documentclass{article}
+
+% ==========================================================================
+% HANAN'S PAPER CONFIGURATION
+% ==========================================================================
+
+% --------------------------------------------------------------------------
+% 1. COLORS & HIGHLIGHTING (Must load first to avoid conflicts!)
+% --------------------------------------------------------------------------
+% I'm loading 'dvipsnames' (standard colors) and 'table' (for coloring rows).
+\usepackage[dvipsnames, table]{xcolor} 
+
+% My Custom Palette for the Paper
+\definecolor{estimandcolor}{RGB}{41, 128, 185}   % Blue
+\definecolor{rectifiercolor}{RGB}{192, 57, 43}   % Red
+\definecolor{predonlycolor}{RGB}{39, 174, 96}    % Green
+\definecolor{ppicolor}{RGB}{142, 68, 173}        % Purple
+\definecolor{newcontent}{RGB}{0, 51, 102}        % Dark blue (for new text)
+\definecolor{axiomcolor}{RGB}{204, 102, 0}       % Orange (for axioms)
+
+% --------------------------------------------------------------------------
+% 2. PAGE LAYOUT & ENCODING
+% --------------------------------------------------------------------------
+\usepackage[margin=1in]{geometry} % Sets standard 1-inch margins
+\usepackage[utf8]{inputenc}       % Ensures special characters work
+\usepackage{paracol}              % Allows parallel columns if I need them
+
+% --------------------------------------------------------------------------
+% 3. MATH & FONTS
+% --------------------------------------------------------------------------
+\usepackage{amsmath, amssymb, amsfonts, amsthm} % Standard math packages
+\usepackage{mleftright}  % Fixes spacing for \left( and \right)
+\usepackage{bbm}         % For the indicator function \mathbbm{1}
+\usepackage{breqn}       % Helps break long equations automatically
+
+% --------------------------------------------------------------------------
+% 4. TABLES (The "Gold Standard" Setup)
+% --------------------------------------------------------------------------
+\usepackage{booktabs}    % Gives me \toprule, \midrule, \bottomrule
+\usepackage{tabularx}    % Allows tables to auto-fit page width
+\usepackage{pdflscape}  % Provides the landscape environment
+\usepackage{multirow}    % Allows cells to span multiple rows
+\usepackage{longtable}   % Allows tables to span multiple pages
+\usepackage{array}       % Extra tools for column formatting
+\usepackage{ragged2e}    % better aligning (RaggedRight)
+
+% My Custom Column Types (Use these in \begin{tabularx})
+% L = Left aligned, auto-width
+% C = Centered, auto-width
+% Y = Ragged right (good for text), auto-width
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\newcolumntype{C}{>{\centering\arraybackslash}X}
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
+\newcolumntype{E}{>{\centering\arraybackslash}m{0.40\textwidth}} % For math columns
+
+% Spacing adjustments for tables
+\setlength{\tabcolsep}{4pt}        % Tighter columns
+\renewcommand{\arraystretch}{1.2}  % More breathing room for rows
+
+% --------------------------------------------------------------------------
+% 5. GRAPHICS & FIGURES
+% --------------------------------------------------------------------------
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{patterns}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+% --------------------------------------------------------------------------
+% 6. BIBLIOGRAPHY
+% --------------------------------------------------------------------------
+\usepackage[backend=biber]{biblatex}
+\addbibresource{paper/references.bib} % My bib file location
+
+% --------------------------------------------------------------------------
+% 7. MY CUSTOM COMMANDS (MACROS)
+% --------------------------------------------------------------------------
+% Resizes an equation to fit the line width (use sparingly!)
+\newcommand{\eqfit}[1]{\resizebox{\linewidth}{!}{$#1$}} 
+
+% Highlighting shortcuts using my colors defined above
+\newcommand{\estimand}[1]{{\color{estimandcolor}#1}}
+\newcommand{\rectifier}[1]{{\color{rectifiercolor}#1}}
+\newcommand{\predonly}[1]{{\color{predonlycolor}#1}}
+\newcommand{\ppi}[1]{{\color{ppicolor}#1}}
+\newcommand{\newadd}[1]{{\color{newcontent}#1}}
+\newcommand{\axiom}[1]{{\color{axiomcolor}#1}}
+
+% Theorem Environments (Theorems, Props, Definitions)
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{definition}{Definition}
+\newtheorem{axiomenv}{Axiom}
+\newtheorem{corollary}{Corollary}
+
+% --------------------------------------------------------------------------
+% 8. UTILITIES (Comments, TODOs, Links)
+% --------------------------------------------------------------------------
+\usepackage{soul} % For highlighting text
+\usepackage[colorinlistoftodos]{todonotes} % For sticky notes
+\usepackage[colorlinks=true, allcolors=blue]{hyperref} % Clickable links
+
+% ==========================================================================
+% DOCUMENT START
+% ==========================================================================
+\title{Prediction-Powered Inference with Missing Data\\ \large(Adapting Pre-trained Models for Finite Population Inference)}
+\author{Hanan Ather}
+\date{December 2025}
+
+\begin{document}
+
+\maketitle
+
+% --------------------------------------------------------------------------
+% TABLE OF CONTENTS
+% --------------------------------------------------------------------------
+\newpage
+\tableofcontents
+\newpage
+
+% --------------------------------------------------------------------------
+% MAIN CONTENT
+% --------------------------------------------------------------------------
+\section{Introduction}
+% My notes and placeholders
+\todo[inline, color=orange]{Strategy: Start with the Historical Data scenario.}
+\todo[inline, color=green]{Status: Tables are fixed, Notation is standardized to 'k' and totals.}
+
+% Imports from my other files
+% \include{paper/background}
+\include{paper/v0}
+%\include{paper/appendix/tables-Hanan}
+
+% --------------------------------------------------------------------------
+% BIBLIOGRAPHY
+% --------------------------------------------------------------------------
+\printbibliography
+
+\end{document}

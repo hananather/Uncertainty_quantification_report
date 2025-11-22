@@ -1,0 +1,497 @@
+\section{Motivation}
+
+
+Modern official statistics operate under a fundamental constraint: survey data ($\mathbf{x}_i, y_i$) is high-signal but expensive and sparse, while administrative, or historical data ($\mathbf{z}_i$) data is ubiquitous and cheap but often suffers from data drift, concept drift, or measurement error. 
+Our goal is not merely to impute missing (item non-response), data, but to leverage the ``cheap" frame data ($\mathbf{z}_i$) to reduce the variance of estimates derived from the ``expensive" sample data ($\mathbf{x}_i$), while maintaining robustness against model failure.
+% Adding this..to make it clear WE ARE NOT PROPOSING A NEW ESTIMATOR!
+Our objective is not to propose a new class of estimators, but to benchmark how existing theoretical frameworks, specifically Model-Calibration and Doubly Robust estimation,perform when applied to the specific constraint of fusing dense historical records with missing current survey data
+
+\section{Scenarios of Missing Data}
+
+\begin{itemize}
+  \item \textbf{Population ($U$):} Finite population of size $N$, $U=\{1,2,\dots,N\}$.
+  \item \textbf{Sample ($S$):} Probability sample of size $n$ drawn from $U$, $S\subseteq U$, $|S|=n$.
+  \item \textbf{Inclusion probabilities and weights:} $\pi_i=\Pr(i\in S)>0$ with design weights $d_i:=1/\pi_i$ for $i\in S$. (Second–order probabilities $\pi_{ij}=\Pr(i,j\in S)$ may be defined when needed, assume positive $\pi_{ij}=\Pr(i,j\in S) >0$.)
+  \item \textbf{Frame auxiliaries:} $\mathbf{z}_i\in\mathbb{R}^{p_z}$ available for \emph{every} unit $i\in U$.
+  \item \textbf{Sample auxiliaries:} $\mathbf{x}_i\in\mathbb{R}^{p_x}$ observed for \emph{all} $i\in S$.
+  \item \textbf{Imputation vector:} 
+        \[
+          \mathbf{v}_i := [\mathbf{z}_i,\mathbf{x}_i]\in\mathbb{R}^{p_v},
+          \qquad p_v=p_z+p_x,
+        \]
+        used as the predictor set in standard imputation models fit on $S$.
+
+  \item \textbf{Study variable and item indicator (item nonresponse only).}
+    Let $q=1$ so $y_i\in\mathbb{R}$. For each $i\in S$, define the \emph{item-response} indicator
+    $r_i=\mathbbm{1}\{y_i\ \text{is observed}\}\in\{0,1\}$. The observed value is
+    $y_i^{\mathrm{obs}}=r_i\,y_i$. We assume full unit response in this section:
+    $R_i\equiv 1$ for all $i\in S$ (no unit nonresponse).
+    \item \textbf{Historical Data:} Let $t$ denote the current period. Variables without temporal superscripts refer to the current period: $y_i$, $\mathbf{x}_i$, $\mathbf{z}_i$ are current-period measurements. Historical data from $k$ periods prior are denoted $y_i^{(t-k)}$, $\mathbf{x}_i^{(t-k)}$, $\mathbf{z}_i^{(t-k)}$. In our primary application, we have complete census data (or rich historical surveys) from period $t-1$ and a smaller survey sample from the current period $t$.
+    
+    \item \textbf{MAR assumption (item nonresponse).}
+    Missing at random given predictors $\mathbf v_i=[\mathbf z_i,\mathbf x_i]$:
+    for $i\in S$,
+    \[
+    \Pr(r_i=1 \mid y_i,\mathbf v_i, R_i=1)\;=\;\Pr(r_i=1 \mid \mathbf v_i, R_i=1).
+    \]
+    Under our “no unit nonresponse” setup ($R_i\equiv 1$), this reduces to
+    \[
+    \Pr(r_i=1 \mid y_i,\mathbf v_i)\;=\;\Pr(r_i=1 \mid \mathbf v_i).
+    \]
+    Write $\rho_i:=\Pr(r_i=1\mid \mathbf v_i)$ for the (item) response propensity.
+
+  \item \textbf{Sets and counts:} $S_r=\{i\in S:r_i=1\}$ and $n_r=\sum_{i\in S} r_i$.
+\end{itemize}
+
+\noindent\emph{Observed-data summary for each $i\in S$:}
+\[
+(\, \mathbf{x}_i,\ \mathbf{z}_i,\ \mathbf{v}_i,\ d_i,\ r_i,\ y_i^{\mathrm{obs}}\,), 
+\quad\text{with }\mathbf{v}_i=[\mathbf{z}_i,\mathbf{x}_i].
+\]
+Imputation of missing $y_i$ uses $(y_i^{\mathrm{obs}},\mathbf{v}_i,d_i)$ within $S$; projection estimator uses $f(\mathbf{z}_i)$ for all $i\in U$.
+
+
+
+\paragraph{Baseline (Complete Response, Current Period Only)}.
+
+Horvitz-Thompson Estimator:
+\[ \hat{\mu}_{HT} = \frac{1}{N}\sum_{i\in S}\frac{y_i}{\pi_i} \]
+
+Notation: $U$ = population of size $N$; $S \subseteq U$ = sample of size $n$; $\pi_i = P(i \in S)$ = inclusion probability; $y_i$ = study variable for unit $i$.
+
+\paragraph{Scenario 1: Item Nonresponse.}
+Now we introduce the scenario where a response variable $y_i$ is missing.
+Broadly in the literature, there are three basic approaches to dealing with non-response: Imputation, Re-weighting, and Doubly Robust methods.
+Let $r_i = \mathbbm{1}_{\{y_i \text{ observed}\}} \in \{0,1\}$; $S_r = \{i \in S: r_i=1\}$ be the set of respondents; and $S_m = \{i \in S: r_i=0\}$ be the set of missing units. We assume predictors $\mathbf{x}_i$ are available for all $i \in S$.
+
+
+
+\medskip
+\noindent \textbf{1. Imputation Estimator} (e.g., Kalton and Kasprzyk, 1986; Dagdoug et al., 2025):
+This approach predicts missing values using a model $m_S(\mathbf{x}_i)$ fit on the respondents.
+\[ 
+\hat{\mu}_{\text{imp}} = \frac{1}{N}\left(\sum_{i\in S_r}\frac{y_i}{\pi_i} + \sum_{i\in S_m}\frac{m_S(\mathbf{x}_i)}{\pi_i}\right) 
+\]
+where $m_S(\mathbf{x}_i)$ is the predicted value from an imputation model fit on respondents $S_r$ for unit $i$ based on predictors $\mathbf{x}_i$.
+
+
+\medskip
+\noindent \textbf{2. Nonresponse Weighting Adjusted (NWA) Estimator} (Oh and Scheuren, 1983; Fay, 1991; Little and Rubin, 2002):
+Also known as the Inverse Probability Weighting (IPW) estimator, this approach adjusts the sampling weights by the estimated probability of response, $\hat{p}_i = \widehat{\Pr}(r_i=1 \mid \mathbf{x}_i)$.
+\[ 
+\hat{\mu}_{\text{NWA}} = \frac{1}{N}\sum_{i\in S_r}\frac{y_i}{\pi_i \hat{p}_i} 
+\]
+
+
+\medskip
+\noindent \textbf{3. Doubly Robust (AIPW) Estimator} (Robins et al., 1994; Kim and Haziza, 2014; Haziza and Beaumont, 2017):
+This estimator combines the previous two. It uses the imputation model to predict outcomes for the whole sample, and then uses the propensity weights to correct the residuals (the difference between observed and predicted values) for the respondents.
+\[ 
+\hat{\mu}_{\text{DR}} = \frac{1}{N} \sum_{i \in S} \frac{1}{\pi_i} \left[ m_S(\mathbf{x}_i) + \frac{r_i}{\hat{p}_i} \left( y_i - m_S(\mathbf{x}_i) \right) \right] 
+\]
+This estimator is consistent if \textit{either} the imputation model $m_S(\cdot)$ \textit{or} the response probability model $\hat{p}_i$ is correctly specified.
+
+
+\medskip
+\noindent An important thing to note here is that in all three cases, we are only using the variables available to us from the sample ($\mathbf{x}_i$). We make no use of additional data that may be available outside of the sample (such as frame data $\mathbf{z}_i$) at this stage.
+
+\paragraph{Scenario 2: Item Nonresponse with Population Auxiliary Data.}
+
+We now extend the previous scenario. In this scenario, we assume access to a vector of auxiliary variables $\mathbf{z}_i$ for every unit in the population $U$ (e.g., census data or administrative records), in addition to sample-specific information $\mathbf{x}_i$. This distinction is critical, $\mathbf{z}_i$ allows for population-level projection, while $\mathbf{x}_i$ is often richer but observed only in the sample. Unlike Scenario 1, where modeling was restricted to the sample, we can now leverage population totals. The standard estimator in this setting is the Nonresponse Generalized Regression (GREG) estimator (Särndal and Lundström, 2005; Kott, 2006; Kim and Park, 2010). This estimator combines a population projection based on $\mathbf{z}_i$ with a bias correction term based on the respondents.
+
+\[ 
+\hat{\mu}_{\text{NR-GREG}} = \frac{1}{N}\left( \sum_{i\in U} m_S(\mathbf{z}_i) + \sum_{i\in S_r} \frac{y_i - m_S(\mathbf{z}_i)}{\pi_i \hat{p}_i} \right) 
+\]
+
+where:
+\begin{itemize}
+    \item $\hat{m}_r(\mathbf{z}_i)$ is the predicted value from an outcome model (e.g., linear regression) projected onto the population frame predictors $\mathbf{z}_i$. This model is fit using only the respondents $S_r$. Crucially, while the model may be trained using both $\mathbf{x}_i$ and $\mathbf{z}_i$, the projection term $\sum_{i\in U}$ can strictly only use $\mathbf{z}_i$ available for the frame.
+    \item $\hat{p}_i$ is the estimated response probability for unit $i$, typically estimated using all available sample auxiliaries $\mathbf{v}_i = [\mathbf{z}_i, \mathbf{x}_i]$.
+\end{itemize}
+
+This estimator is a specific instance of the calibration estimator. It relies on the ``Difference Estimator'' principle (Cassel, Särndal, and Wretman, 1976), if the model $m_S(\mathbf{z}_i)$ is close to the true $y_i$, the variance is greatly reduced.  In other words, the first term $\sum_{U} \hat{m}_r(\mathbf{z}_i)$ provides a population-based projection, while the second term acts as a bias correction based on the residuals $(y_i - \hat{m}_r(\mathbf{z}_i))$ observed among respondents. Furthermore, if the model is biased but the propensity weights $\hat{p}_i$ are correct, the second term corrects the bias, preserving the double robustness property (Kang and Schafer, 2007).
+
+A critical limitation of the standard GREG estimator above is the restriction on the outcome model. To compute the first term $\sum_{i \in U} \hat{m}_r(\cdot)$, the model must depend \textit{only} on variables available for the entire population ($\mathbf{z}_i$). However, in many survey settings, the sample contains rich, highly predictive auxiliary information ($\mathbf{x}_i$) that is not available on the frame (e.g., detailed clinical measurements vs. basic demographics in the census).
+
+This motivates the need to distinguish between:
+\begin{itemize}
+    \item $\mathbf{x}_i$: Rich auxiliary information available only on the sample $S$.
+    \item $\mathbf{z}_i$: Auxiliary information available on the entire frame $U$ (e.g., census data or administrative records).
+\end{itemize}
+The next scenario addresses how to integrate these two data sources effectively.
+
+\paragraph{Scenario 3: Two-Step Estimation (Mass Imputation with Projection).}
+
+A limitation of the standard GREG (Scenario 2) is that the population term must rely strictly on frame variables $\mathbf{z}_i$. In practice, we often have rich variables $\mathbf{x}_i$ in the sample that are highly predictive but missing from the frame. Standard GREG cannot leverage these $\mathbf{x}_i$ variables to adjust the population anchor. To bridge this gap, we employ a two-step approach, referred to in the literature as the \textbf{Projection Estimator} (Kim and Rao, 2012), \textbf{Mass Imputation} (Breidt and Opsomer, 2008), or \textbf{Model-Calibration} (Wu and Sitter, 2001). This approach decouples the imputation step (bias reduction) from the projection step (variance reduction):
+
+\begin{enumerate}
+    \item \textbf{Step 1 (Imputation):} We fit a rich model $m_1(\mathbf{v}_i)$ on the respondents $S_r$ using all available predictors $\mathbf{v}_i = [\mathbf{z}_i, \mathbf{x}_i]$. We generate predictions $\tilde{y}_i$ for the entire sample $S$ and define the completed variable:
+    \[ y_i^\star = r_i y_i + (1-r_i)\tilde{y}_i \]
+    This allows us to ``mass impute" the missing data using the high-quality $\mathbf{x}_i$ variables.
+    
+    \item \textbf{Step 2 (Projection):}  We treat the completed values $y_i^\star$ as the variable of interest. We fit a second, coarser model $m_2(\mathbf{z}_i)$ (often a linear projection) that relates $y_i^\star$ to the frame variables $\mathbf{z}_i$ available for the whole population.
+\end{enumerate}
+
+The resulting estimator is:
+\[ 
+\hat{\mu}_{\text{2step}} = \frac{1}{N} \left( \sum_{i \in U} m_2(\mathbf{z}_i) + \sum_{i \in S} \frac{y_i^\star - m_2(\mathbf{z}_i)}{\pi_i} \right) 
+\]
+This estimator combines the best of both worlds. The first term $\sum_U m_2(\mathbf{z}_i)$ leverages the frame data $\mathbf{z}$ to reduce variance, and also ensures the estimate is calibrated to known population totals. The second term acts as a bias correction. Crucially because $y_i^\star$ contains the information from $\mathbf{x}_i$, this effectively ``imports" the predictive power of $\mathbf{x}$ into the population estimate without requiring $\mathbf{x}$ to be known for the whole population.
+
+
+
+\paragraph{Scenario 4: Historical Data and Pre-Trained Models.}
+We consider the specific case where the frame data $\mathbf{z}_i$ consists of historical outcomes from a previous census or administrative period ($t-1$).
+
+\begin{itemize}
+    \item \textbf{Historical Frame ($\mathbf{z}_i$):} We possess complete administrative data from the previous period, so $\mathbf{z}_i = y_i^{(t-1)}$.
+    \item \textbf{Current Sample ($\mathbf{x}_i$):} We observe a vector of current signal variables (e.g., high-frequency survey responses) for the sample $S$.
+\end{itemize}
+
+A naive difference estimator would be:
+\[ \hat{\mu}_{\text{diff}} = \bar{Y}^{(t-1)} + \frac{1}{N}\sum_{i\in S_r}\frac{y_i - y_i^{(t-1)}}{\pi_i} \]
+However, this fails to utilize the current signals $\mathbf{x}_i$ to explain deviations from the history.
+
+By applying the Mass Imputation framework (Scenario 3) to this temporal context, we replace the simple historical value $y_i^{(t-1)}$ with a \textbf{Pre-trained Forecast}. Let $f_{\text{hist}}(\mathbf{z}_i)$ denote a sophisticated model trained on historical trends. The estimator becomes:
+\[ 
+\hat{\mu}_{\text{Hist-PPD}} = \frac{1}{N} \left( \sum_{i \in U} f_{\text{hist}}(\mathbf{z}_i) + \sum_{i \in S} \frac{y_i^\star - f_{\text{hist}}(\mathbf{z}_i)}{\pi_i} \right) 
+\]
+where $y_i^\star$ is the mass-imputed current value using the rich real-time signals $\mathbf{x}_i$. This "anchors" the estimate to the stable historical census while using the sample residuals to correct for temporal evolution between periods. 
+
+\[ 
+\hat{\mu}_{\text{Hist-PPD}} = \frac{1}{N} \left( \underbrace{\sum_{i \in U} \hat{y}_i^{\text{forecast}}}_{\text{Baseline Forecast}} + \underbrace{\sum_{i \in S} \frac{y_i^\star - \hat{y}_i^{\text{forecast}}}{\pi_i}}_{\text{Real-time Correction}} \right) 
+\]
+where:
+\begin{enumerate}
+    \item $\hat{y}_i^{\text{forecast}} = f(y_i^{(t-1)})$ is the baseline prediction derived from historical data (Scenario 2 component).
+    \item $y_i^\star$ is the mass-imputed current value using rich real-time signals $\mathbf{x}_i$ (Scenario 1 component).
+\end{enumerate}
+Note that that this estimator is identical to the previous estimator. We're just applying it to a historical context. 
+
+
+
+
+
+
+
+
+
+% ------------------------------------------------- %
+% ------------------- NEW SECTION ------------------- %
+% ------------------------------------------------- %
+
+%% Variance estimation
+\section{Variance Estimation}
+
+A major challenge in using the estimator proposed in Scenario 3 is variance estimation. Standard variance formulas (e.g., Horvitz-Thompson variance) treat the completed values $y_i^\star$ as if they were observed values. This leads to the ``naive variance estimation'' problem, where the uncertainty associated with the imputation model $m_S(\cdot)$ is ignored, resulting in standard errors that are too small and confidence intervals that have poor coverage (Kim and Rao, 2012).
+
+To properly account for both the sampling design and the uncertainty in the imputation mechanism, we recommend a replication-based approach, specifically the bootstrap.
+
+\paragraph{The Bootstrap for Mass Imputation.}
+To estimate the variance of $\hat{\mu}_{\text{MCMI}}$, we employ a bootstrap procedure that captures the variability of the model fitting process. The procedure is as follows:
+
+\begin{enumerate}
+    \item \textbf{Generate Replicates:} Draw $B$ bootstrap samples $S^{(b)}$ from the original sample $S$ using the design weights (e.g., using the rescaling bootstrap for complex designs).
+    \item \textbf{Re-Impute:} For each bootstrap sample $b = 1, \dots, B$:
+    \begin{itemize}
+        \item Refit the imputation model $\hat{m}^{(b)}(\mathbf{v}_i)$ using only the respondents in the bootstrap replicate $S_r^{(b)}$.
+        \item Generate new imputed values $\tilde{y}_i^{(b)}$ for the non-respondents in that replicate.
+        \item Refit the projection model $\hat{f}^{(b)}(\mathbf{z}_i)$ on the completed bootstrap sample.
+    \end{itemize}
+    \item \textbf{Calculate Estimate:} Compute the estimator $\hat{\mu}^{(b)}$ for each replicate.
+\end{enumerate}
+
+The variance estimator is then the empirical variance of the $B$ bootstrap estimates:
+\[
+\widehat{V}(\hat{\mu}_{\text{PPD-DR}}) = \frac{1}{B-1} \sum_{b=1}^B \left( \hat{\mu}^{(b)} - \bar{\hat{\mu}} \right)^2
+\]
+where $\bar{\hat{\mu}}$ is the mean of the bootstrap replicates. This method is asymptotically consistent and automatically captures the additional variance introduced by the imputation and projection steps.
+
+
+
+
+
+
+\section{Simulation Study}
+\todo[inline, color=orange]{NEED TO VALIDATE/VERIFY - THINK HARD ABOUT THIS!}
+
+To evaluate the finite-sample performance of the proposed estimation strategy, we conduct a comprehensive simulation study. We follow the standard evaluation framework for missing data estimators in survey sampling (e.g., Kim and Rao, 2012; Haziza and Beaumont, 2017). Our primary objective is to study and benchmark the estimators against each other under realistic conditions where historical administrative data is ubiquitous, but current sample data is subject to non-response.
+
+\subsection{Simulation Setup}
+We employ a four-step data generation process to create a finite population, draw samples, induce non-response, and compute estimates. We repeat this process $K=2,000$ times to approximate the sampling distribution of the estimators.
+
+\paragraph{Data Generation Process.}
+We generate a finite population $U$ of size $N=10,000$. Following the simulation designs of Haziza and Beaumont (2017), we utilize Gamma distributions to mimic the right-skewed nature of business survey data (e.g., revenue or production).
+
+\begin{itemize}
+    \item \textbf{Historical Administrative Data ($z_i$):} 
+    We generate a historical variable $z_i$ (representing, for example, previous census revenue) from a Gamma distribution with shape $\alpha=2$ and scale $\beta=10$:
+    \[ z_i \sim \text{Gamma}(2, 10) \]
+    This results in a strictly positive, right-skewed distribution with a mean of 20, typical of economic populations.
+    
+    \item \textbf{Current Signal ($x_i$):} 
+    We generate the current signal $x_i$ (e.g., a real-time auxiliary signal) as a function of the history, subject to drift. We use an additive error structure with a positive distribution to ensure $x_i$ remains strictly positive:
+    \[ x_i = 0.8 z_i + \epsilon_{x,i} \]
+    where $\epsilon_{x,i} \sim \text{Exponential}(5)$. This creates a strong positive correlation ($\rho \approx 0.7$) between the past and present, reflecting a stable but evolving population.
+    
+    \item \textbf{Outcome Variable ($y_i$):} 
+    We generate the current outcome of interest $y_i$ as a function of both the historical anchor and the current signal:
+    \[ y_i = 2 + 0.5 z_i + 1.5 x_i + \epsilon_{y,i} \]
+    where $\epsilon_{y,i} \sim N(0, 5)$. This setup ensures that while history ($z_i$) is predictive, the current signal ($x_i$) contains unique, necessary information to capture the true outcome.
+    
+    \item \textbf{Sampling ($S$):} 
+    From the population, we draw a probability sample $S$ of size $n=500$ using Simple Random Sampling (SRS).
+    
+    \item \textbf{Non-response ($r_i$):} 
+    We introduce item non-response using a logistic propensity model. To simulate informative missingness often found in business surveys (where unit size affects response behavior), we model the response probability as a function of the current signal $x_i$:
+    \[ \text{logit}(\Pr(r_i=1)) = -1 + 0.1 x_i \]
+    This induces a Missing at Random (MAR) mechanism. Crucially, because response depends on $x_i$, and $y_i$ depends on $x_i$, the observed set of respondents is systematically biased. Estimators that fail to account for $x_i$ will therefore yield biased inference.
+\end{itemize}
+
+
+\subsection{Evaluation Metrics}
+
+We assess the performance of each estimator using three standard statistical metrics. Let $\hat{\theta}_k$ be the estimate from the $k$-th simulation run and $\theta$ be the true population total.
+
+We measure systematic error using Relative Bias (RB). Values close to 0\% indicate unbiasedness; generally, an absolute relative bias greater than 5\% is considered problematic in official statistics.
+\[ \text{RB}(\hat{\theta}) = \frac{1}{K} \sum_{k=1}^{K} \left( \frac{\hat{\theta}_k - \theta}{\theta} \right) \times 100\% \]
+
+We measure efficiency using Relative Root Mean Square Error (RRMSE), which captures the combined effect of bias and variance.
+\[ \text{RRMSE}(\hat{\theta}) = \sqrt{ \frac{1}{K} \sum_{k=1}^{K} \left( \frac{\hat{\theta}_k - \theta}{\theta} \right)^2 } \times 100\% \]
+
+Finally, we evaluate uncertainty quantification using the Coverage Rate (CR), 
+\[ \text{CR} = \frac{1}{K} \sum_{k=1}^{K} \mathbbm{1}\{ \theta \in [\hat{\theta}_k \pm 1.96 \sqrt{\widehat{V}_k}] \} \]
+defined as the proportion of simulation runs where the 95\% confidence interval contains the true population value. A valid estimator should have a coverage rate close to 95\%.
+
+\subsection{Comparisons}
+
+We compare six distinct estimators to isolate the contributions of historical data, current signals, and robust corrections:
+
+\begin{enumerate}
+    \item \textbf{Naive Estimator:} The standard Horvitz-Thompson estimator using only the respondents $S_r$. It ignores missingness and makes no use of auxiliary data.
+    \item \textbf{Weighting Only (NWA):} The standard IPW estimator that adjusts for non-response using propensity scores $\hat{p}_i(x_i, z_i)$, but utilizes no outcome modeling (Scenario 1).
+    \item \textbf{Standard Hist-GREG:} The classical generalized regression estimator using only historical data $z_i$ for the projection. It ignores the rich current signals $x_i$ inside the imputation model (Scenario 2).
+    \item \textbf{Mass Imputation (Two-Step):} The projection estimator that uses current signals $x_i$ to impute missing values, but lacks the propensity score correction for double robustness (Scenario 3, also the Hist-PPD).
+    
+    
+    \item \textbf{Hist-PPD-DR:} The proposed approach which integrates all available information. It uses $z_i$ for the population anchor, $x_i$ for mass imputation, and propensity weights for residual bias correction.
+\end{enumerate}
+
+
+
+
+
+%% Additional context
+\section{Appendix: Additional Content}
+\todo[inline, color=orange]{Do I still need this?}
+\paragraph{Scenario X: Complete Response with Historical Data.}
+
+Difference Estimator (using lagged outcome):
+\[ \hat{\mu}_{\text{diff}} = \bar{Y}^{(t-1)} + \frac{1}{N}\sum_{i\in S}\frac{y_i - y_i^{(t-1)}}{\pi_i} \]
+where $\bar{Y}^{(t-1)} = N^{-1}\sum_{i\in U} y_i^{(t-1)}$ and $y_i^{(t-1)}$ = outcome from previous census.
+
+Model-Assisted Estimator (using auxiliary variables):
+\[ \hat{\mu}_{\text{MA}} = \frac{1}{N}\sum_{i\in U}\hat{m}_S(y_i^{(t-1), }, \mathbf{v}_i ) + \frac{1}{N}\sum_{i\in S}\frac{y_i - \hat{m}_S(y_i^{(t-1)}, \mathbf{v}_i )}{\pi_i} \]
+where $\mathbf{x}_i$ = auxiliary variables and $\hat{m}_S$ = outcome model fit on sample $S$.
+$\mathbf{v}_i = (\mathbf{z}_i, \mathbf{x}_i^{(t-1)})$ = predictor vector ($\mathbf{z}_i$, $\mathbf{x}_i^{(t-1)})$ available for all $i \in U$.
+
+\medskip
+
+
+
+\paragraph{Item nonresponse setup.}
+Let $r_i=\mathbbm{1}\{y_i \text{ observed}\}\in\{0,1\}$ for $i\in S$ and define
+\[
+y_i^{\mathrm{obs}}:=r_i\,y_i, \qquad
+\tilde y_i := \widehat m(\mathbf{v}_i) \ \ \text{(imputed using } \mathbf{v}_i=[\mathbf{z}_i,\mathbf{x}_i]\text{)},
+\]
+where $\widehat m$ denotes the chosen imputation method (e.g., regression, hot-deck, MICE) fit on the sample.
+We will use the completed value
+\[
+y_i^\star := r_i\,y_i^{\mathrm{obs}} + (1-r_i)\,\tilde y_i,
+\]
+so that $y_i^\star=y_i$ when $r_i=1$ and $y_i^\star=\tilde y_i$ when $r_i=0$.
+
+\paragraph{Difference estimator for non-response.}
+\todo[inline, color=orange]{Perhaps move to scenario 3?}
+With base weights $d_i:=1/\pi_i$ and predictions $f(\mathbf{z}_i)$ available for all $i\in U$,
+the PPD estimator using the completed outcomes $y_i^\star$ is
+\begin{align}
+\widehat{T}_y^{\text{PPD-imp}}
+&= \sum_{i\in U} f(\mathbf{z}_i)
+ \;+\; \sum_{i\in S} d_i \Bigl( y_i^\star - f(\mathbf{z}_i) \Bigr), \label{eq:PPD-imp-total}\\[3pt]
+\widehat{\bar \mu}^{\text{PPD-imp}}
+&= \frac{1}{N}\,\widehat{T}_y^{\text{PPD-imp}}. \label{eq:PPD-imp-mean}
+\end{align}
+
+Writing the sample correction explicitly,
+\begin{align}
+\sum_{i\in S} d_i \bigl( y_i^\star - f(\mathbf{z}_i) \bigr)
+&= \underbrace{\sum_{i\in S} d_i\, r_i \bigl( y_i^{\mathrm{obs}} - f(\mathbf{z}_i) \bigr)}_{\text{observed-$y$ residuals}}
+\;+\;
+\underbrace{\sum_{i\in S} d_i\, (1-r_i) \bigl( \tilde y_i - f(\mathbf{z}_i) \bigr)}_{\text{imputed-$y$ residuals}}. \label{eq:obs-imp-split}
+\end{align}
+\begin{itemize}
+  \item If there were no item nonresponse ($r_i\equiv 1$), then $y_i^\star=y_i$ and
+  \eqref{eq:PPD-imp-total} reduces to the standard PPD:
+  $\widehat{T}_y^{\text{PPD}}=\sum_{i\in U} f(\mathbf{z}_i) + \sum_{i\in S} d_i\,(y_i - f(\mathbf{z}_i))$.
+  \item With item nonresponse, \eqref{eq:PPD-imp-total} uses a completed outcome
+  $y_i^\star$ formed from $y_i^{\mathrm{obs}}$ (if available) or $\tilde y_i$ (if missing),
+  where $\tilde y_i$ is imputed from $\mathbf{v}_i=[\mathbf{z}_i,\mathbf{x}_i]$.
+  \item The split \eqref{eq:obs-imp-split} makes clear which part of the correction
+  comes from observed vs.\ imputed $y$. Statistical properties then follow from the chosen
+  imputation method (e.g., under suitable MAR/regularity, $\tilde y_i$ targets $E[y_i\mid \mathbf{v}_i]$).
+\end{itemize}
+
+
+
+
+
+\paragraph{Difference Estimator with doubly–robust (AIPW) correction for item nonresponse.}
+\todo[inline, color=orange]{This will eventually be moved to after scenario 4; TODO: Need to do a literature review. What papers use this type of estimator? }
+In the imputation version we replaced missing outcomes by $y_i^\star$ and used
+$\widehat T_y^{\text{PPD-imp}}=\sum_{i\in U} f(\mathbf z_i)+\sum_{i\in S} d_i\{y_i^\star-f(\mathbf z_i)\}$.
+This is convenient but relies on the outcome model alone to control bias. A standard safeguard is to augment the residual correction with inverse–probability weighting based on a response–propensity model. The resulting estimator is \emph{doubly–robust}: it is consistent if either the outcome model (for $y_i$) or the response model (for $r_i$) is correctly specified.
+
+% We want to be very clear that this is not a new estimator!
+This estimator applies the established doubly robust model-calibration framework (e.g., Kim and Rao, 2012) to the historical setting.
+
+\medskip
+\noindent\emph{Set–up.} Let $d_i=1/\pi_i$ be the design weight, $\tilde y_i:=\widehat m_s(\mathbf v_i)$ a prediction from an outcome model fit on the sample (using design weights), and
+\[
+\hat\rho_i:=\widehat{\Pr}(r_i=1\mid \mathbf v_i)
+\]
+a response–propensity estimate (e.g., weighted logistic/probit or flexible ML classifier fit with weights $d_i$). For numerical stability, bound $\hat\rho_i\in[\varepsilon,1]$ for a small $\varepsilon>0$.
+
+
+\todo[inline, color=orange]{Need to fix the notation used $\mu$ instead, Also need to standardize $p$ vs. $\rho$..}
+\medskip
+\noindent\emph{Estimator.} The PPD estimator with doubly–robust (AIPW) residual correction is
+\begin{align}
+\widehat T_y^{\text{PPD-DR}}
+&= \sum_{i\in U} f(\mathbf z_i)
+  \;+\; \sum_{i\in S} d_i\Bigl\{\tilde y_i - f(\mathbf z_i)\Bigr\}
+  \;+\; \sum_{i\in S_r} \frac{d_i}{\hat\rho_i}\,\Bigl(y_i-\tilde y_i\Bigr),
+\label{eq:PPD-DR-total}\\[3pt]
+\widehat{\bar Y}^{\text{PPD-DR}}&=\frac{1}{N}\,\widehat T_y^{\text{PPD-DR}}.
+\label{eq:PPD-DR-mean}
+\end{align}
+Equivalently, combining the last two sums,
+\[
+\widehat T_y^{\text{PPD-DR}}
+= \sum_{i\in U} f(\mathbf z_i)
+  + \sum_{i\in S} d_i\!\left\{\tilde y_i - f(\mathbf z_i) + \frac{r_i}{\hat\rho_i}\bigl(y_i-\tilde y_i\bigr)\right\},
+\]
+where the term $y_i$ is only evaluated for respondents ($r_i=1$). Under the convention $y_i^{\mathrm{obs}}=r_i y_i$, one may also write $\tfrac{r_i}{\hat\rho_i}(y_i-\tilde y_i)=\tfrac{r_i}{\hat\rho_i}(y_i^{\mathrm{obs}}-\tilde y_i)$.
+
+\medskip
+\noindent\emph{Connections and special cases.}
+\begin{itemize}
+\item \textbf{Reduction to imputation PPD (Scenario 1).} If $\hat\rho_i\equiv 1$ then
+\[
+\tilde y_i - f(\mathbf z_i) + r_i\{y_i-\tilde y_i\}
+= r_i y_i + (1-r_i)\tilde y_i - f(\mathbf z_i)
+= y_i^\star - f(\mathbf z_i),
+\]
+so $\widehat T_y^{\text{PPD-DR}}=\widehat T_y^{\text{PPD-imp}}$.
+\item \textbf{No item nonresponse.} If $r_i\equiv 1$ (hence $\hat\rho_i\equiv 1$), \eqref{eq:PPD-DR-total} reduces to the standard PPD/GREG:
+$\sum_{i\in U} f(\mathbf z_i)+\sum_{i\in S} d_i\{y_i-f(\mathbf z_i)\}$.
+\item \textbf{Classical AIPW.} If $f\equiv 0$, \eqref{eq:PPD-DR-total} becomes the usual design-weighted AIPW estimator for the total.
+\item \textbf{Double robustness.} Under MAR given $\mathbf v_i$, if either (i) the outcome model is mean-correct, $E(y_i\mid \mathbf v_i)=m(\mathbf v_i)$, \emph{or} (ii) the response model is correct, $\Pr(r_i=1\mid \mathbf v_i)=\rho(\mathbf v_i)$, then
+\[
+E_{S,R}\!\big[\widehat T_y^{\text{PPD-DR}}\big]\;=\;\sum_{i\in U} y_i
+\quad\text{(to first order, treating $f(\mathbf z_i)$ as fixed).}
+\]
+\end{itemize}
+
+
+
+\paragraph{Equivalent forms.}
+The following expressions are algebraically equivalent ways to write the same total estimator.
+
+\medskip
+\noindent\textbf{Form A (compact one–sum):}
+\begin{align}
+\widehat T_y^{\text{PPD-DR}}
+&= \sum_{i\in U} f(\mathbf z_i)
+  \;+\; \sum_{i\in S} d_i\Bigl\{
+      \underbrace{\tilde y_i - f(\mathbf z_i)}_{\text{PPD/GREG difference}}
+      \;+\;
+      \underbrace{\frac{r_i}{\hat\rho_i}\bigl(y_i-\tilde y_i\bigr)}_{\text{IPW augmentation}}
+    \Bigr\}.
+\label{eq:PPD-DR-total-A}
+\end{align}
+
+\noindent\textbf{Form B (two–sum version separating respondents):}
+\begin{align}
+\widehat T_y^{\text{PPD-DR}}
+&= \sum_{i\in U} f(\mathbf z_i)
+  \;+\; \sum_{i\in S} d_i\bigl\{\tilde y_i - f(\mathbf z_i)\bigr\}
+  \;+\; \sum_{i\in S_r} \frac{d_i}{\hat\rho_i}\,\bigl(y_i-\tilde y_i\bigr).
+\label{eq:PPD-DR-total-B}
+\end{align}
+
+\noindent\textbf{Form C:}
+\begin{align}
+\widehat T_y^{\text{PPD-DR}}
+&= \sum_{i\in U} f(\mathbf z_i)
+  \;+\; \sum_{i\in S} d_i\Bigl\{
+     \frac{r_i}{\hat\rho_i}\,y_i
+     + \Bigl(1-\frac{r_i}{\hat\rho_i}\Bigr)\tilde y_i
+     - f(\mathbf z_i)
+  \Bigr\}.
+\label{eq:PPD-DR-total-C}
+\end{align}
+
+\noindent\textbf{Form D (``mixture of residuals''):}
+\begin{align}
+\widehat T_y^{\text{PPD-DR}}
+&= \sum_{i\in U} f(\mathbf z_i)
+  \;+\; \sum_{i\in S} d_i\Bigl\{
+     \frac{r_i}{\hat\rho_i}\bigl[y_i - f(\mathbf z_i)\bigr]
+     + \Bigl(1-\frac{r_i}{\hat\rho_i}\Bigr)\bigl[\tilde y_i - f(\mathbf z_i)\bigr]
+  \Bigr\}.
+\label{eq:PPD-DR-total-D}
+\end{align}
+
+\noindent\textbf{Form E (explicit split into respondents/nonrespondents):}
+\begin{align}
+\widehat T_y^{\text{PPD-DR}}
+&= \sum_{i\in U} f(\mathbf z_i)
+  + \sum_{i\in S_r} d_i\Bigl\{\frac{1}{\hat\rho_i}\bigl[y_i-f(\mathbf z_i)\bigr]
+      + \Bigl(1-\frac{1}{\hat\rho_i}\Bigr)\bigl[\tilde y_i-f(\mathbf z_i)\bigr]\Bigr\}
+  + \sum_{i\in S_m} d_i\bigl[\tilde y_i-f(\mathbf z_i)\bigr].
+\label{eq:PPD-DR-total-E}
+\end{align}
+
+\medskip
+\noindent\textbf{Derivation.}
+Starting from Form~\eqref{eq:PPD-DR-total-A}, expand and regroup the terms inside the braces:
+\begin{align*}
+\tilde y_i - f(\mathbf z_i) + \frac{r_i}{\hat\rho_i}(y_i-\tilde y_i)
+&= \frac{r_i}{\hat\rho_i}y_i + \Bigl(1-\frac{r_i}{\hat\rho_i}\Bigr)\tilde y_i - f(\mathbf z_i) \\
+&= \frac{r_i}{\hat\rho_i}\bigl[y_i-f(\mathbf z_i)\bigr]
+  + \Bigl(1-\frac{r_i}{\hat\rho_i}\Bigr)\bigl[\tilde y_i-f(\mathbf z_i)\bigr],
+\end{align*}
+which gives Forms~\eqref{eq:PPD-DR-total-C} and \eqref{eq:PPD-DR-total-D}. Splitting the sum in \eqref{eq:PPD-DR-total-C} by respondents ($S_r$) and nonrespondents ($S_m$) yields the explicit Form~\eqref{eq:PPD-DR-total-E}. Form~\eqref{eq:PPD-DR-total-B} is just \eqref{eq:PPD-DR-total-A} with the augmentation written over $S_r$ only.
+
+\medskip
+\begin{itemize}
+\item The term $\tilde y_i - f(\mathbf z_i)$ is the usual PPD/GREG difference computed for \emph{all} sampled units.
+\item The augmentation $\tfrac{r_i}{\hat\rho_i}(y_i-\tilde y_i)$ corrects the sample residuals using inverse–probability weighting and is evaluated only for respondents.
+\item In Forms C–E, the coefficients $\tfrac{r_i}{\hat\rho_i}$ and $1-\tfrac{r_i}{\hat\rho_i}$ \emph{sum to one} but are \emph{not} probabilities (for respondents, $1-\tfrac{1}{\hat\rho_i}\le 0$), so these are algebraic mixtures—not convex combinations.
+\end{itemize}
+
+\medskip
+\noindent\textbf{Sanity checks.}
+If $\hat\rho_i\equiv 1$ (ignore nonresponse), all forms collapse to the imputation-based PPD with $y_i^\star=r_i y_i+(1-r_i)\tilde y_i$:
+\[
+\widehat T_y^{\text{PPD-imp}}
+= \sum_{i\in U} f(\mathbf z_i) + \sum_{i\in S} d_i\bigl\{y_i^\star - f(\mathbf z_i)\bigr\}.
+\]
+If $r_i\equiv 1$ (no item nonresponse), they reduce to the standard PPD/GREG:
+\(
+\sum_{i\in U} f(\mathbf z_i)+\sum_{i\in S} d_i\{y_i-f(\mathbf z_i)\}.
+\)
+If $f\equiv 0$, they give the classical design–weighted AIPW total.
+

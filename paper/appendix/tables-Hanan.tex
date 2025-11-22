@@ -1,0 +1,176 @@
+\begin{table}[H]
+\centering
+\caption{Estimators for Complete Response}
+\label{tab:estimators_complete}
+\begin{tabularx}{\textwidth}{@{} L l L @{}} % Use tabularx here
+\toprule
+\textbf{Estimator Name} & \textbf{Formula} & \textbf{Problem Solved / Context} \\ 
+\midrule
+Expansion Estimator or Horvitz-Thompson (HT) Estimator 
+& $\hat{t}_{HT}=\sum_{k\in s}\frac{y_{k}}{\pi_{k}}$ 
+& Provides a design-unbiased estimator for the population total $t$. Serves as the baseline. \\
+\addlinespace % Adds a little extra vertical space
+Difference Estimator 
+& $\hat{t}_{m}=\sum_{k\in U}m(x_{k})+\sum_{k\in s}\frac{y_{k}-m(x_{k})}{\pi_{k}}$ 
+& Improves efficiency by incorporating auxiliary information $x_k$ via a \textit{known} model $m(\cdot)$. \\
+\addlinespace
+Pseudo-Generalized Difference Estimator 
+& $\hat{t}_{m_{U}}=\sum_{k\in U}m_{U}(x_{k})+\sum_{k\in s}\frac{y_{k}-m_{U}(x_{k})}{\pi_{k}}$ 
+& Solves $m(\cdot)$ being unknown by using $m_U(\cdot)$, an estimate based on the \textit{entire population} $U$. \\
+\addlinespace
+Model-Assisted Estimator 
+& $\hat{t}_{m_{s}}=\sum_{k\in U}m_{s}(x_{k})+\sum_{k\in s}\frac{y_{k}-m_{s}(x_{k})}{\pi_{k}}$ 
+& Solves $m_U(\cdot)$ being unavailable by using $m_s(\cdot)$, an estimate based on only the \textit{sample} $s$. \\ 
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Estimators Adapted for Nonresponse}
+\label{tab:estimators_nonresponse}
+\begin{tabularx}{\textwidth}{@{} L l L @{}} % Use tabularx here
+\toprule
+\textbf{Estimator Name} & \textbf{Formula} & \textbf{Problem Solved / Context} \\ 
+\midrule
+Two-Phase Estimator or Double Expansion Estimator 
+& $\hat{t}_{2HT}=\sum_{k\in s_{r}}\frac{y_{k}}{\pi_{k}p_{k}}$ 
+& Adapts the HT estimator to nonresponse using the \textit{true response probabilities} $\{p_k\}$. \\
+\addlinespace
+Nonresponse Weighting Adjusted (NWA) Estimator 
+& $\hat{t}_{NWA}=\sum_{k\in s_{r}}\frac{y_{k}}{\pi_{k}\hat{p}_{k}}$ 
+& Solves $\{p_k\}$ being unknown by using \textit{estimated response probabilities} $\{\hat{p}_k\}$. \\
+\addlinespace
+Two-Phase Model-Assisted Estimator 
+& $\hat{t}_{m_{r},p}=\sum_{k\in U}m_{r}(x_{k})+\sum_{k\in s_{r}}\frac{y_{k}-m_{r}(x_{k})}{\pi_{k}p_{k}}$ 
+& Adapts the model-assisted estimator by using $m_r(\cdot)$ (fit on respondents $S_r$) and \textit{true} $\{p_k\}$. \\
+\addlinespace
+NWA Model-Assisted Estimator 
+& $\hat{t}_{m_{r},\hat{p}}=\sum_{k\in U}m_{r}(x_{k})+\sum_{k\in s_{r}}\frac{y_{k}-m_{r}(x_{k})}{\pi_{k}\hat{p}_{k}}$ 
+& Solves $\{p_k\}$ being unknown by using \textit{estimated} $\{\hat{p}_k\}$. \\ 
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+\begin{table}[H]
+\centering
+\caption{Imputation Estimators (Dagdoug et al., 2025)}
+\label{tab:estimators_imputation}
+\begin{tabularx}{\textwidth}{@{} L l L @{}}
+\toprule
+\textbf{Estimator Name} & \textbf{Formula} & \textbf{Problem Solved / Context} \\ 
+\midrule
+Horvitz-Thompson Estimator
+& $\hat{\mu}_{\pi}:=\frac{1}{N}\sum_{k\in S}\frac{y_{k}}{\pi_{k}}$
+& The baseline estimator for the mean $\mu$ in the "ideal case of complete response". Unavailable with missing $y_k$. \\
+\addlinespace
+Imputed Estimator (General Form)
+& $\hat{\mu}_{\hat{m}}:=\frac{1}{N}\left(\sum_{k\in S_{r}}\frac{y_{k}}{\pi_{k}}+\sum_{k\in S_{m}}\frac{\hat{m}(x_{k})}{\pi_{k}}\right)$
+& Handles nonresponse by using a model $\hat{m}$ to impute missing $y_k$ values for non-respondents ($S_m$). The model is fit on respondent data $D_r$. \\
+\addlinespace
+Regression Tree Imputed Estimator
+& $\hat{\mu}_{tree}:=\frac{1}{N}\left(\sum_{k\in S_{r}}\frac{y_{k}}{\pi_{k}}+\sum_{k\in S_{m}}\frac{\hat{m}_{tree}(x_{k})}{\pi_{k}}\right)$
+& A specific version where $\hat{m}$ is a regression tree. The prediction $\hat{m}_{tree}(x)$ is the average of $y$-values from respondents in the same node. \\
+\addlinespace
+Random Forest Imputed Estimator
+& $\hat{\mu}_{rf}^{(B)}:=\frac{1}{N}\left(\sum_{k\in S_{r}}\frac{y_{k}}{\pi_{k}}+\sum_{k\in S_{m}}\frac{\hat{m}_{rf}^{(B)}(x_{k})}{\pi_{k}}\right)$
+& Uses a random forest for $\hat{m}$. The prediction $\hat{m}_{rf}^{(B)}(x)$ is the average of predictions from $B$ trees to reduce variance. \\
+\addlinespace
+Infinite Forest Imputed Estimator
+& $\hat{\mu}_{rf,v}^{(\infty)}:=\frac{1}{N}\left(\sum_{k\in S_{r}}\frac{y_{k}}{\pi_{k}}+\sum_{k\in S_{m}}\frac{\hat{m}_{rf,v}^{(\infty)}(x_{k})}{\pi_{k}}\right)$
+& A theoretical estimator representing the limit as $B \to \infty$. Used to establish the theoretical properties of the RF estimator. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ------------------------------------------------- %
+% ------------------- TABLE Updated ------------------- %
+% ------------------------------------------------- %
+
+
+\begin{table}[H]
+\centering
+\caption{Estimators for Complete Response}
+\label{tab:estimators_complete}
+\begin{tabularx}{\textwidth}{@{} L l L @{}} % Use tabularx here
+\toprule
+\textbf{Estimator Name} & \textbf{Formula} & \textbf{Problem Solved / Context} \\ 
+\midrule
+Expansion Estimator or Horvitz-Thompson (HT) Estimator 
+& $\hat{t}_{HT} = \sum_{k\in s} d_k y_k$ 
+& Provides a design-unbiased estimator for the population total $t_y$. Serves as the baseline. \\
+\addlinespace % Adds a little extra vertical space
+Difference Estimator 
+& $\hat{t}_{diff} = \sum_{k\in U} m(\mathbf{x}_k) + \sum_{k\in s} d_k \left(y_k - m(\mathbf{x}_k)\right)$ 
+& Improves efficiency by incorporating auxiliary information $\mathbf{x}_k$ via a \textit{known} model $m(\cdot)$. \\
+\addlinespace
+Pseudo-Generalized Difference Estimator 
+& $\hat{t}_{m_{U}} = \sum_{k\in U} m_U(\mathbf{x}_k) + \sum_{k\in s} d_k \left(y_k - m_U(\mathbf{x}_k)\right)$ 
+& Solves $m(\cdot)$ being unknown by using $m_U(\cdot)$, an estimate based on the \textit{entire population} $U$. \\
+\addlinespace
+Model-Assisted Estimator 
+& $\hat{t}_{m_{s}} = \sum_{k\in U} m_s(\mathbf{x}_k) + \sum_{k\in s} d_k \left(y_k - m_s(\mathbf{x}_k)\right)$ 
+& Solves $m_U(\cdot)$ being unavailable by using $m_s(\cdot)$, an estimate based on only the \textit{sample} $s$. \\ 
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Estimators Adapted for Nonresponse}
+\label{tab:estimators_nonresponse}
+\begin{tabularx}{\textwidth}{@{} L l L @{}} % Use tabularx here
+\toprule
+\textbf{Estimator Name} & \textbf{Formula} & \textbf{Problem Solved / Context} \\ 
+\midrule
+Two-Phase Estimator or Double Expansion Estimator 
+& $\hat{t}_{2HT} = \sum_{k\in s_r} \frac{d_k}{p_k} y_k$ 
+& Adapts the HT estimator to nonresponse using the \textit{true response probabilities} $\{p_k\}$. \\
+\addlinespace
+Nonresponse Weighting Adjusted (NWA) Estimator 
+& $\hat{t}_{NWA} = \sum_{k\in s_r} \frac{d_k}{\hat{p}_k} y_k$ 
+& Solves $\{p_k\}$ being unknown by using \textit{estimated response probabilities} $\{\hat{p}_k\}$. \\
+\addlinespace
+Two-Phase Model-Assisted Estimator 
+& $\hat{t}_{m_{r},p} = \sum_{k\in U} m_r(\mathbf{x}_k) + \sum_{k\in s_r} \frac{d_k}{p_k} \left(y_k - m_r(\mathbf{x}_k)\right)$ 
+& Adapts the model-assisted estimator by using $m_r(\cdot)$ (fit on respondents $s_r$) and \textit{true} $\{p_k\}$. \\
+\addlinespace
+NWA Model-Assisted Estimator 
+& $\hat{t}_{m_{r},\hat{p}} = \sum_{k\in U} m_r(\mathbf{x}_k) + \sum_{k\in s_r} \frac{d_k}{\hat{p}_k} \left(y_k - m_r(\mathbf{x}_k)\right)$ 
+& Solves $\{p_k\}$ being unknown by using \textit{estimated} $\{\hat{p}_k\}$. \\ 
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+\begin{table}[H]
+\centering
+\caption{Imputation Estimators (Dagdoug et al., 2025)}
+\label{tab:estimators_imputation}
+\begin{tabularx}{\textwidth}{@{} L l L @{}}
+\toprule
+\textbf{Estimator Name} & \textbf{Formula} & \textbf{Problem Solved / Context} \\ 
+\midrule
+Horvitz-Thompson Estimator
+& $\hat{t}_{HT} = \sum_{k\in s} d_k y_k$
+& The baseline estimator for the total $t_y$ in the "ideal case of complete response". Unavailable with missing $y_k$. \\
+\addlinespace
+Imputed Estimator (General Form)
+& $\hat{t}_{imp} = \sum_{k\in s_r} d_k y_k + \sum_{k\in s_m} d_k \hat{m}(\mathbf{x}_k)$
+& Handles nonresponse by using a model $\hat{m}$ to impute missing $y_k$ values for non-respondents ($s_m$). The model is fit on respondent data $s_r$. \\
+\addlinespace
+Regression Tree Imputed Estimator
+& $\hat{t}_{tree} = \sum_{k\in s_r} d_k y_k + \sum_{k\in s_m} d_k \hat{m}_{tree}(\mathbf{x}_k)$
+& A specific version where $\hat{m}$ is a regression tree. The prediction $\hat{m}_{tree}(\mathbf{x})$ is the average of $y$-values from respondents in the same node. \\
+\addlinespace
+Random Forest Imputed Estimator
+& $\hat{t}_{rf}^{(B)} = \sum_{k\in s_r} d_k y_k + \sum_{k\in s_m} d_k \hat{m}_{rf}^{(B)}(\mathbf{x}_k)$
+& Uses a random forest for $\hat{m}$. The prediction $\hat{m}_{rf}^{(B)}(\mathbf{x})$ is the average of predictions from $B$ trees to reduce variance. \\
+\addlinespace
+Infinite Forest Imputed Estimator
+& $\hat{t}_{rf,v}^{(\infty)} = \sum_{k\in s_r} d_k y_k + \sum_{k\in s_m} d_k \hat{m}_{rf,v}^{(\infty)}(\mathbf{x}_k)$
+& A theoretical estimator representing the limit as $B \to \infty$. Used to establish the theoretical properties of the RF estimator. \\
+\bottomrule
+\end{tabularx}
+\end{table}
