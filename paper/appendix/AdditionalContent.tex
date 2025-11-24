@@ -1,0 +1,216 @@
+
+
+%% Additional context
+\section{Appendix: Additional Content}
+\todo[inline, color=orange]{Do I still need this?}
+\paragraph{Scenario X: Complete Response with Historical Data.}
+
+Difference Estimator (using lagged outcome):
+\[ \hat{\mu}_{\text{diff}} = \bar{Y}^{(t-1)} + \frac{1}{N}\sum_{i\in S}\frac{y_i - y_i^{(t-1)}}{\pi_i} \]
+where $\bar{Y}^{(t-1)} = N^{-1}\sum_{i\in U} y_i^{(t-1)}$ and $y_i^{(t-1)}$ = outcome from previous census.
+
+Model-Assisted Estimator (using auxiliary variables):
+\[ \hat{\mu}_{\text{MA}} = \frac{1}{N}\sum_{i\in U}\hat{m}_S(y_i^{(t-1), }, \mathbf{v}_i ) + \frac{1}{N}\sum_{i\in S}\frac{y_i - \hat{m}_S(y_i^{(t-1)}, \mathbf{v}_i )}{\pi_i} \]
+where $\mathbf{x}_i$ = auxiliary variables and $\hat{m}_S$ = outcome model fit on sample $S$.
+$\mathbf{v}_i = (\mathbf{z}_i, \mathbf{x}_i^{(t-1)})$ = predictor vector ($\mathbf{z}_i$, $\mathbf{x}_i^{(t-1)})$ available for all $i \in U$.
+
+\medskip
+
+
+
+\paragraph{Item nonresponse setup.}
+Let $r_i=\mathbbm{1}\{y_i \text{ observed}\}\in\{0,1\}$ for $i\in S$ and define
+\[
+y_i^{\mathrm{obs}}:=r_i\,y_i, \qquad
+\tilde y_i := \widehat m(\mathbf{v}_i) \ \ \text{(imputed using } \mathbf{v}_i=[\mathbf{z}_i,\mathbf{x}_i]\text{)},
+\]
+where $\widehat m$ denotes the chosen imputation method (e.g., regression, hot-deck, MICE) fit on the sample.
+We will use the completed value
+\[
+y_i^\star := r_i\,y_i^{\mathrm{obs}} + (1-r_i)\,\tilde y_i,
+\]
+so that $y_i^\star=y_i$ when $r_i=1$ and $y_i^\star=\tilde y_i$ when $r_i=0$.
+
+\paragraph{Difference estimator for non-response.}
+\todo[inline, color=orange]{Perhaps move to scenario 3?}
+With base weights $d_i:=1/\pi_i$ and predictions $f(\mathbf{z}_i)$ available for all $i\in U$,
+the PPD estimator using the completed outcomes $y_i^\star$ is
+\begin{align}
+\widehat{T}_y^{\text{PPD-imp}}
+&= \sum_{i\in U} f(\mathbf{z}_i)
+ \;+\; \sum_{i\in S} d_i \Bigl( y_i^\star - f(\mathbf{z}_i) \Bigr), \label{eq:PPD-imp-total}\\[3pt]
+\widehat{\bar \mu}^{\text{PPD-imp}}
+&= \frac{1}{N}\,\widehat{T}_y^{\text{PPD-imp}}. \label{eq:PPD-imp-mean}
+\end{align}
+
+Writing the sample correction explicitly,
+\begin{align}
+\sum_{i\in S} d_i \bigl( y_i^\star - f(\mathbf{z}_i) \bigr)
+&= \underbrace{\sum_{i\in S} d_i\, r_i \bigl( y_i^{\mathrm{obs}} - f(\mathbf{z}_i) \bigr)}_{\text{observed-$y$ residuals}}
+\;+\;
+\underbrace{\sum_{i\in S} d_i\, (1-r_i) \bigl( \tilde y_i - f(\mathbf{z}_i) \bigr)}_{\text{imputed-$y$ residuals}}. \label{eq:obs-imp-split}
+\end{align}
+\begin{itemize}
+  \item If there were no item nonresponse ($r_i\equiv 1$), then $y_i^\star=y_i$ and
+  \eqref{eq:PPD-imp-total} reduces to the standard PPD:
+  $\widehat{T}_y^{\text{PPD}}=\sum_{i\in U} f(\mathbf{z}_i) + \sum_{i\in S} d_i\,(y_i - f(\mathbf{z}_i))$.
+  \item With item nonresponse, \eqref{eq:PPD-imp-total} uses a completed outcome
+  $y_i^\star$ formed from $y_i^{\mathrm{obs}}$ (if available) or $\tilde y_i$ (if missing),
+  where $\tilde y_i$ is imputed from $\mathbf{v}_i=[\mathbf{z}_i,\mathbf{x}_i]$.
+  \item The split \eqref{eq:obs-imp-split} makes clear which part of the correction
+  comes from observed vs.\ imputed $y$. Statistical properties then follow from the chosen
+  imputation method (e.g., under suitable MAR/regularity, $\tilde y_i$ targets $E[y_i\mid \mathbf{v}_i]$).
+\end{itemize}
+
+
+
+
+
+\paragraph{Difference Estimator with doubly–robust (AIPW) correction for item nonresponse.}
+\todo[inline, color=orange]{This will eventually be moved to after scenario 4; TODO: Need to do a literature review. What papers use this type of estimator? }
+In the imputation version we replaced missing outcomes by $y_i^\star$ and used
+$\widehat T_y^{\text{PPD-imp}}=\sum_{i\in U} f(\mathbf z_i)+\sum_{i\in S} d_i\{y_i^\star-f(\mathbf z_i)\}$.
+This is convenient but relies on the outcome model alone to control bias. A standard safeguard is to augment the residual correction with inverse–probability weighting based on a response–propensity model. The resulting estimator is \emph{doubly–robust}: it is consistent if either the outcome model (for $y_i$) or the response model (for $r_i$) is correctly specified.
+
+% We want to be very clear that this is not a new estimator!
+This estimator applies the established doubly robust model-calibration framework (e.g., Kim and Rao, 2012) to the historical setting.
+
+\medskip
+\noindent\emph{Set–up.} Let $d_i=1/\pi_i$ be the design weight, $\tilde y_i:=\widehat m_s(\mathbf v_i)$ a prediction from an outcome model fit on the sample (using design weights), and
+\[
+\hat\rho_i:=\widehat{\Pr}(r_i=1\mid \mathbf v_i)
+\]
+a response–propensity estimate (e.g., weighted logistic/probit or flexible ML classifier fit with weights $d_i$). For numerical stability, bound $\hat\rho_i\in[\varepsilon,1]$ for a small $\varepsilon>0$.
+
+
+\todo[inline, color=orange]{Need to fix the notation used $\mu$ instead, Also need to standardize $p$ vs. $\rho$..}
+\medskip
+\noindent\emph{Estimator.} The PPD estimator with doubly–robust (AIPW) residual correction is
+\begin{align}
+\widehat T_y^{\text{PPD-DR}}
+&= \sum_{i\in U} f(\mathbf z_i)
+  \;+\; \sum_{i\in S} d_i\Bigl\{\tilde y_i - f(\mathbf z_i)\Bigr\}
+  \;+\; \sum_{i\in S_r} \frac{d_i}{\hat\rho_i}\,\Bigl(y_i-\tilde y_i\Bigr),
+\label{eq:PPD-DR-total}\\[3pt]
+\widehat{\bar Y}^{\text{PPD-DR}}&=\frac{1}{N}\,\widehat T_y^{\text{PPD-DR}}.
+\label{eq:PPD-DR-mean}
+\end{align}
+Equivalently, combining the last two sums,
+\[
+\widehat T_y^{\text{PPD-DR}}
+= \sum_{i\in U} f(\mathbf z_i)
+  + \sum_{i\in S} d_i\!\left\{\tilde y_i - f(\mathbf z_i) + \frac{r_i}{\hat\rho_i}\bigl(y_i-\tilde y_i\bigr)\right\},
+\]
+where the term $y_i$ is only evaluated for respondents ($r_i=1$). Under the convention $y_i^{\mathrm{obs}}=r_i y_i$, one may also write $\tfrac{r_i}{\hat\rho_i}(y_i-\tilde y_i)=\tfrac{r_i}{\hat\rho_i}(y_i^{\mathrm{obs}}-\tilde y_i)$.
+
+\medskip
+\noindent\emph{Connections and special cases.}
+\begin{itemize}
+\item \textbf{Reduction to imputation PPD (Scenario 1).} If $\hat\rho_i\equiv 1$ then
+\[
+\tilde y_i - f(\mathbf z_i) + r_i\{y_i-\tilde y_i\}
+= r_i y_i + (1-r_i)\tilde y_i - f(\mathbf z_i)
+= y_i^\star - f(\mathbf z_i),
+\]
+so $\widehat T_y^{\text{PPD-DR}}=\widehat T_y^{\text{PPD-imp}}$.
+\item \textbf{No item nonresponse.} If $r_i\equiv 1$ (hence $\hat\rho_i\equiv 1$), \eqref{eq:PPD-DR-total} reduces to the standard PPD/GREG:
+$\sum_{i\in U} f(\mathbf z_i)+\sum_{i\in S} d_i\{y_i-f(\mathbf z_i)\}$.
+\item \textbf{Classical AIPW.} If $f\equiv 0$, \eqref{eq:PPD-DR-total} becomes the usual design-weighted AIPW estimator for the total.
+\item \textbf{Double robustness.} Under MAR given $\mathbf v_i$, if either (i) the outcome model is mean-correct, $E(y_i\mid \mathbf v_i)=m(\mathbf v_i)$, \emph{or} (ii) the response model is correct, $\Pr(r_i=1\mid \mathbf v_i)=\rho(\mathbf v_i)$, then
+\[
+E_{S,R}\!\big[\widehat T_y^{\text{PPD-DR}}\big]\;=\;\sum_{i\in U} y_i
+\quad\text{(to first order, treating $f(\mathbf z_i)$ as fixed).}
+\]
+\end{itemize}
+
+
+
+\paragraph{Equivalent forms.}
+The following expressions are algebraically equivalent ways to write the same total estimator.
+
+\medskip
+\noindent\textbf{Form A (compact one–sum):}
+\begin{align}
+\widehat T_y^{\text{PPD-DR}}
+&= \sum_{i\in U} f(\mathbf z_i)
+  \;+\; \sum_{i\in S} d_i\Bigl\{
+      \underbrace{\tilde y_i - f(\mathbf z_i)}_{\text{PPD/GREG difference}}
+      \;+\;
+      \underbrace{\frac{r_i}{\hat\rho_i}\bigl(y_i-\tilde y_i\bigr)}_{\text{IPW augmentation}}
+    \Bigr\}.
+\label{eq:PPD-DR-total-A}
+\end{align}
+
+\noindent\textbf{Form B (two–sum version separating respondents):}
+\begin{align}
+\widehat T_y^{\text{PPD-DR}}
+&= \sum_{i\in U} f(\mathbf z_i)
+  \;+\; \sum_{i\in S} d_i\bigl\{\tilde y_i - f(\mathbf z_i)\bigr\}
+  \;+\; \sum_{i\in S_r} \frac{d_i}{\hat\rho_i}\,\bigl(y_i-\tilde y_i\bigr).
+\label{eq:PPD-DR-total-B}
+\end{align}
+
+\noindent\textbf{Form C:}
+\begin{align}
+\widehat T_y^{\text{PPD-DR}}
+&= \sum_{i\in U} f(\mathbf z_i)
+  \;+\; \sum_{i\in S} d_i\Bigl\{
+     \frac{r_i}{\hat\rho_i}\,y_i
+     + \Bigl(1-\frac{r_i}{\hat\rho_i}\Bigr)\tilde y_i
+     - f(\mathbf z_i)
+  \Bigr\}.
+\label{eq:PPD-DR-total-C}
+\end{align}
+
+\noindent\textbf{Form D (``mixture of residuals''):}
+\begin{align}
+\widehat T_y^{\text{PPD-DR}}
+&= \sum_{i\in U} f(\mathbf z_i)
+  \;+\; \sum_{i\in S} d_i\Bigl\{
+     \frac{r_i}{\hat\rho_i}\bigl[y_i - f(\mathbf z_i)\bigr]
+     + \Bigl(1-\frac{r_i}{\hat\rho_i}\Bigr)\bigl[\tilde y_i - f(\mathbf z_i)\bigr]
+  \Bigr\}.
+\label{eq:PPD-DR-total-D}
+\end{align}
+
+\noindent\textbf{Form E (explicit split into respondents/nonrespondents):}
+\begin{align}
+\widehat T_y^{\text{PPD-DR}}
+&= \sum_{i\in U} f(\mathbf z_i)
+  + \sum_{i\in S_r} d_i\Bigl\{\frac{1}{\hat\rho_i}\bigl[y_i-f(\mathbf z_i)\bigr]
+      + \Bigl(1-\frac{1}{\hat\rho_i}\Bigr)\bigl[\tilde y_i-f(\mathbf z_i)\bigr]\Bigr\}
+  + \sum_{i\in S_m} d_i\bigl[\tilde y_i-f(\mathbf z_i)\bigr].
+\label{eq:PPD-DR-total-E}
+\end{align}
+
+\medskip
+\noindent\textbf{Derivation.}
+Starting from Form~\eqref{eq:PPD-DR-total-A}, expand and regroup the terms inside the braces:
+\begin{align*}
+\tilde y_i - f(\mathbf z_i) + \frac{r_i}{\hat\rho_i}(y_i-\tilde y_i)
+&= \frac{r_i}{\hat\rho_i}y_i + \Bigl(1-\frac{r_i}{\hat\rho_i}\Bigr)\tilde y_i - f(\mathbf z_i) \\
+&= \frac{r_i}{\hat\rho_i}\bigl[y_i-f(\mathbf z_i)\bigr]
+  + \Bigl(1-\frac{r_i}{\hat\rho_i}\Bigr)\bigl[\tilde y_i-f(\mathbf z_i)\bigr],
+\end{align*}
+which gives Forms~\eqref{eq:PPD-DR-total-C} and \eqref{eq:PPD-DR-total-D}. Splitting the sum in \eqref{eq:PPD-DR-total-C} by respondents ($S_r$) and nonrespondents ($S_m$) yields the explicit Form~\eqref{eq:PPD-DR-total-E}. Form~\eqref{eq:PPD-DR-total-B} is just \eqref{eq:PPD-DR-total-A} with the augmentation written over $S_r$ only.
+
+\medskip
+\begin{itemize}
+\item The term $\tilde y_i - f(\mathbf z_i)$ is the usual PPD/GREG difference computed for \emph{all} sampled units.
+\item The augmentation $\tfrac{r_i}{\hat\rho_i}(y_i-\tilde y_i)$ corrects the sample residuals using inverse–probability weighting and is evaluated only for respondents.
+\item In Forms C–E, the coefficients $\tfrac{r_i}{\hat\rho_i}$ and $1-\tfrac{r_i}{\hat\rho_i}$ \emph{sum to one} but are \emph{not} probabilities (for respondents, $1-\tfrac{1}{\hat\rho_i}\le 0$), so these are algebraic mixtures—not convex combinations.
+\end{itemize}
+
+\medskip
+\noindent\textbf{Sanity checks.}
+If $\hat\rho_i\equiv 1$ (ignore nonresponse), all forms collapse to the imputation-based PPD with $y_i^\star=r_i y_i+(1-r_i)\tilde y_i$:
+\[
+\widehat T_y^{\text{PPD-imp}}
+= \sum_{i\in U} f(\mathbf z_i) + \sum_{i\in S} d_i\bigl\{y_i^\star - f(\mathbf z_i)\bigr\}.
+\]
+If $r_i\equiv 1$ (no item nonresponse), they reduce to the standard PPD/GREG:
+\(
+\sum_{i\in U} f(\mathbf z_i)+\sum_{i\in S} d_i\{y_i-f(\mathbf z_i)\}.
+\)
+If $f\equiv 0$, they give the classical design–weighted AIPW total.
+
