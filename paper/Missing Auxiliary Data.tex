@@ -1,0 +1,113 @@
+% =========================================================
+% NEW SECTION: Design-Based Estimators
+% =========================================================
+\newpage
+
+\section{Design-Based Estimators When $\mathbf{x}$ is Missing on the Frame}
+
+We now present estimators that preserve the fundamental projection identity by replacing the population functional $\sum_U f(\mathbf{x}_i)$ with appropriate estimators when $\mathbf{x}$ is not available for the entire frame. These approaches generalize the projection estimators discussed in previous sections by explicitly handling the missingness of $\mathbf{x}$ on the frame level.
+
+\subsection{Multiple Imputation (MI) for $\mathbf{x}$}
+
+Assume a Missing at Random (MAR) mechanism for the availability of $\mathbf{x}$ conditional on frame variables $\mathbf{z}$, and assume a proper, congenial multiple imputation procedure. We generate $M$ completed frames $\{\mathbf{X}^{(m)}\}_{m=1}^M$ by imputing $\mathbf{x}$ values for the non-sampled population units using $\mathbf{z}$.
+
+For each completed frame $m$, the estimator is:
+\[
+\hat{\mu}^{PP,(m)} = \frac{1}{N}\sum_{j \in U} f\!\big(\mathbf{x}_j^{(m)}\big)
+\;-\;
+\frac{1}{N}\sum_{i \in S} d_i\Big(f\!\big(\mathbf{x}_i^{(m)}\big)-y_i\Big).
+\]
+The final estimator is the average over imputations, $\hat{\mu}_{MI}=\frac{1}{M}\sum_m \hat{\mu}^{PP,(m)}$.
+Variance is estimated using Rubin’s rules: $V_{\text{Total}}=\bar V_W + (1+\frac{1}{M})V_B$, where $\bar V_W$ is the average within-imputation variance and $V_B$ is the between-imputation variance.
+
+\paragraph{Remarks.}
+\begin{enumerate}
+    \item[(i)] Imputation should be performed using the always-observed frame variables $\mathbf{z}$. To ensure congeniality, the imputation model must include variables used in the sampling design.
+    \item[(ii)] No extra bias correction is required beyond the difference estimator identity; Rubin’s rules automatically account for the added uncertainty due to imputation.
+\end{enumerate}
+
+\subsection{Stratification by $\mathbf{x}$-Observability (Domain Estimation)}
+
+Consider the case where the population $U$ can be partitioned into two domains based on the availability of $\mathbf{x}$: $U_1=\{\text{units where }\mathbf{x} \text{ is known}\}$ and $U_2=\{\text{units where }\mathbf{x} \text{ is missing}\}$. Assume the domain sizes $N_1, N_2$ are known from the frame.
+
+\paragraph{Domain-scaled weights.}
+Let the domain-adjusted weights be $d_i^{(k)}=d_i \cdot \frac{N_k}{\sum_{j\in U_k\cap S} d_j}$ such that the weights sum to the known domain size $\sum_{i\in U_k\cap S} d_i^{(k)}=N_k$.
+
+\paragraph{Estimators.}
+We compute the projection estimator for the domain where $\mathbf{x}$ is available ($U_1$) and a standard expansion estimator for the domain where it is not ($U_2$):
+\begin{align*}
+\hat{\mu}_1^{PP}
+&= \frac{1}{N_1}\sum_{j\in U_1} f(\mathbf{x}_j)
+\;-\;
+\frac{1}{N_1}\sum_{i\in U_1\cap S} d_i^{(1)}\Big(f(\mathbf{x}_i)-y_i\Big), \\
+\hat{\mu}_2^{\text{classic}}
+&= \frac{1}{N_2}\sum_{i\in U_2 \cap S} d_i^{(2)}\, y_i.
+\end{align*}
+The combined estimator is the weighted sum:
+\[
+\hat{\mu}^{SPP}_{\text{missing}} = \frac{N_1}{N} \hat{\mu}_1^{PP} + \frac{N_2}{N} \hat{\mu}_2^{\text{classic}}.
+\]
+
+\paragraph{Validity.}
+This approach is an application of standard \emph{domain estimation}. It does not require the missingness mechanism to be MCAR. Design-consistency holds as long as the domains are identifiable on the frame. Variance can be estimated using design-consistent linearization or replicate weights that respect the domain structure.
+
+\subsection{IPW for $\mathbf{x}$-Observability on the Frame}
+
+If $\mathbf{x}$ is missing for some units in the population, we can assume MAR given $\mathbf{z}$ with propensity $\pi_j^X=\Pr(R_j^X=1\mid\mathbf{z}_j)$, where $R_j^X$ indicates that $\mathbf{x}$ is observed for unit $j$. We estimate these propensities as $\hat{\pi}_j^X$. We replace the population sum terms with their Horvitz--Thompson IPW counterparts:
+
+\begin{equation}
+\label{eq:ppi-ipw}
+\boxed{
+\begin{aligned}
+\hat{\mu}^{PP\text{-}IPW}
+= \;&
+\underbrace{\frac{1}{N}\sum_{i\in S} d_i\,y_i}_{\text{HT Estimator for }\bar Y} \\
+&+
+\frac{1}{N}\!\left[
+\underbrace{\sum_{j\in U} \frac{R_j^X}{\hat{\pi}_j^X}\,f(\mathbf{x}_j)}_{\text{IPW pop. mean of }f(\mathbf{x})}
+-
+\underbrace{\sum_{i\in S} d_i\,\frac{R_i^X}{\hat{\pi}_i^X}\,f(\mathbf{x}_i)}_{\text{IPW sample-weighted }f(\mathbf{x})}
+\right]\!.
+\end{aligned}
+}
+\end{equation}
+
+\paragraph{Remarks.}
+\begin{enumerate}
+    \item[(i)] The scaling is consistent as all components are normalized by $N$.
+    \item[(ii)] The term $d_i \cdot (R_i^X/\hat{\pi}_i^X)$ represents a compound weight adjusting for both sampling and the availability of $\mathbf{x}$.
+    \item[(iii)] Variance estimation should use linearization or replicate weights, with valid re-estimation of the propensities $\hat{\pi}^X$ within each replicate.
+\end{enumerate}
+
+\subsection{AIPW (Doubly Robust) for $f(\mathbf{x})$}
+
+To gain robustness against misspecification of the propensity model $\hat{\pi}^X$, we fit a regression model linking the frame variables to the sample variables: $\hat{g}(\mathbf{z})\approx \mathbb{E}[f(\mathbf{x})\mid \mathbf{z}]$. We replace the $f(\mathbf{x})$ terms with Augmented IPW (AIPW) corrections on both the population and the sample side.
+
+\begin{equation}
+\label{eq:ppi-aipw}
+\boxed{
+\begin{aligned}
+\hat{\mu}^{PP\text{-}AIPW}
+= \;&
+\frac{1}{N}\sum_{i\in S} d_i\,y_i \\
+&+
+\frac{1}{N}
+\Bigg\{
+\sum_{j\in U}\!\left[
+\frac{R_j^X}{\hat{\pi}_j^X} f(\mathbf{x}_j)
+-
+\frac{R_j^X-\hat{\pi}_j^X}{\hat{\pi}_j^X}\,\hat{g}(\mathbf{z}_j)
+\right] \\
+&\quad\quad\quad -
+\sum_{i\in S}\! d_i \left[
+\frac{R_i^X}{\hat{\pi}_i^X} f(\mathbf{x}_i)
+-
+\frac{R_i^X-\hat{\pi}_i^X}{\hat{\pi}_i^X}\,\hat{g}(\mathbf{z}_i)
+\right]
+\Bigg\}.
+\end{aligned}
+}
+\end{equation}
+
+\paragraph{Double Robustness.}
+This estimator is consistent if either the propensity model $\hat{\pi}^X$ or the regression model $\hat{g}(\mathbf{z})$ is correctly specified (assuming positivity). Applying the correction to both the population sum ($U$) and the sample sum ($S$) preserves the projection identity and the double robustness property for both components.

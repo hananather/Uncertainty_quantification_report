@@ -129,46 +129,40 @@ A limitation of the standard GREG (Scenario 2) is that the population term must 
     \[ y_i^\star = r_i y_i + (1-r_i)\tilde{y}_i \]
     This allows us to ``mass impute" the missing data using the high-quality $\mathbf{x}_i$ variables.
     
-    \item \textbf{Step 2 (Projection):}  We treat the completed values $y_i^\star$ as the variable of interest. We fit a second, coarser model $m_U(\mathbf{z}_i)$ (often a linear projection) that relates $y_i^\star$ to the frame variables $\mathbf{z}_i$ available for the whole population.
+    \item \textbf{Step 2 (Projection):}  We treat the completed values $y_i^\star$ as the variable of interest. We fit a second, coarser model $ \hat{m}_S(\mathbf{z}_i)$ (often a linear projection) that relates $y_i^\star$ to the frame variables $\mathbf{z}_i$ available for the whole population.
 \end{enumerate}
 
 The resulting estimator is:
 \[ 
-\hat{\mu}_{\text{2step}} = \frac{1}{N} \left( \sum_{i \in U} \hat{m}_{S_{r}}(\mathbf{z}_i) + \sum_{i \in S} \frac{y_i^\star - \hat{m}_{S_{r}}(\mathbf{z}_i)}{\pi_i} \right) 
+\hat{\mu}_{\text{2step}} = \frac{1}{N} \left( \sum_{i \in U} \hat{m}_S(\mathbf{z}_i) + \sum_{i \in S} \frac{y_i^\star - \hat{m}_S(\mathbf{z}_i)}{\pi_i} \right) 
 \]
-This estimator combines the best of both worlds. The first term $\sum_U \hat{m}_{S_{r}}(\mathbf{z}_i)$ leverages the frame data $\mathbf{z}$ to reduce variance, and also ensures the estimate is calibrated to known population totals. The second term acts as a bias correction. Crucially because $y_i^\star$ contains the information from $\mathbf{x}_i$, this effectively ``imports" the predictive power of $\mathbf{x}$ into the population estimate without requiring $\mathbf{x}$ to be known for the whole population.
+This estimator combines the best of both worlds. The first term $\sum_U \hat{m}_S(\mathbf{z}_i)$ leverages the frame data $\mathbf{z}$ to reduce variance, and also ensures the estimate is calibrated to known population totals. The second term acts as a bias correction. Crucially because $y_i^\star$ contains the information from $\mathbf{x}_i$, this effectively ``imports" the predictive power of $\mathbf{x}$ into the population estimate without requiring $\mathbf{x}$ to be known for the whole population.
 
 
 
 \paragraph{Scenario 4: Historical Data and Pre-Trained Models.}
-We consider the specific case where the frame data $\mathbf{z}_i$ consists of historical outcomes from a previous census or administrative period ($t-1$).
 
-\begin{itemize}
-    \item \textbf{Historical Frame ($\mathbf{z}_i$):} We possess complete administrative data from the previous period, so $\mathbf{z}_i = y_i^{(t-1)}$.
-    \item \textbf{Current Sample ($\mathbf{x}_i$):} We observe a vector of current signal variables (e.g., high-frequency survey responses) for the sample $S$.
-\end{itemize}
+We consider the specific case where the frame data $\mathbf{z}_i$ consists of outcomes from a previous administrative period ($t-1$), such that $\mathbf{z}_i$ contains $y_i^{(t-1)}$. Additionally, we observe a vector of current-period auxiliary variables $\mathbf{x}_i$ for the sample $S$, which are not available on the frame. In this scenario, we rely on modeling assumptions to handle missingness, reserving propensity score adjustments for the robust framework in Scenario 5. We motivate the proposed estimator by examining the limitations of two preliminary approaches.
 
-A naive difference estimator would be:
-\[ \hat{\mu}_{\text{diff}} = \bar{Y}^{(t-1)} + \frac{1}{N}\sum_{i\in S_r}\frac{y_i - y_i^{(t-1)}}{\pi_i} \]
-However, this fails to utilize the current signals $\mathbf{x}_i$ to explain deviations from the history.
-
-By applying the Mass Imputation framework (Scenario 3) to this temporal context, we replace the simple historical value $y_i^{(t-1)}$ with a \textbf{Pre-trained Forecast}. Let $f_{\text{hist}}(\mathbf{z}_i)$ denote a sophisticated model trained on historical trends. The estimator becomes:
+The simplest approach, the \textbf{Naive Difference Estimator}, treats the previous period's outcome $y_i^{(t-1)}$ as a direct proxy for the current outcome $y_i$. Because current outcomes are strictly observed for respondents, the adjustment is calculated over the respondent set $S_r$:
 \[ 
-\hat{\mu}_{\text{Hist-PPD}} = \frac{1}{N} \left( \sum_{i \in U} f_{\text{hist}}(\mathbf{z}_i) + \sum_{i \in S} \frac{y_i^\star - f_{\text{hist}}(\mathbf{z}_i)}{\pi_i} \right) 
+\hat{\mu}_{\text{diff}} = \bar{Y}^{(t-1)} + \frac{1}{N}\sum_{i\in S_r}\frac{y_i - y_i^{(t-1)}}{\pi_i} 
 \]
-where $y_i^\star$ is the mass-imputed current value using the rich real-time signals $\mathbf{x}_i$. This "anchors" the estimate to the stable historical census while using the sample residuals to correct for temporal evolution between periods. 
+This estimator is unbiased only if the change in outcome $y_i - y_i^{(t-1)}$ is uncorrelated with the response probability, or if the change is constant across the population. It fails to utilize $\mathbf{x}_i$ to account for heterogeneous evolution of the variable of interest.
 
+To reduce the variance of the difference estimator, one may employ a \textbf{Pre-trained Difference Estimator}. We utilize a model $f_{\text{hist}}(\mathbf{z}_i)$ trained on historical trends (e.g., $y^{(t-1)} \sim \mathbf{z}^{(t-1)}$) to generate a baseline prediction $\hat{y}_i^{\text{hist}} = f_{\text{hist}}(\mathbf{z}_i)$. The estimator becomes:
+\[
+\hat{\mu}_{\text{Pre-train}} = \frac{1}{N} \left( \sum_{i \in U} f_{\text{hist}}(\mathbf{z}_i) + \sum_{i \in S_r} \frac{y_i - f_{\text{hist}}(\mathbf{z}_i)}{\pi_i} \right)
+\]
+While this method leverages the frame to reduce the variance of the projection term (the first summand), the bias correction (the second summand) is restricted to the respondent set $S_r$. If the relationship between $y_i$ and $\mathbf{z}_i$ has drifted due to factors associated with $\mathbf{x}_i$, and response depends on $\mathbf{x}_i$, the residual term computed over $S_r$ will be a biased estimate of the population residual.
+
+Finally, we propose the \textbf{Hist-PPD Estimator}, which applies the Mass Imputation framework (Scenario 3) to this temporal context. We retain the historical function $f_{\text{hist}}(\mathbf{z}_i)$ for the population projection. However, to account for systematic evolution captured by current auxiliaries, we replace the observed $y_i$ with the mass-imputed value $y_i^\star = \hat{m}_{S_r}(\mathbf{v}_i)$, derived using the current sample auxiliaries $\mathbf{x}_i$. 
+
+Crucially, because $y_i^\star$ is generated for all sampled units, the residual adjustment is computed over the \textit{full sample} $S$, utilizing the sample design weights to project the residuals to the population:
 \[ 
-\hat{\mu}_{\text{Hist-PPD}} = \frac{1}{N} \left( \underbrace{\sum_{i \in U} \hat{y}_i^{\text{forecast}}}_{\text{Baseline Forecast}} + \underbrace{\sum_{i \in S} \frac{y_i^\star - \hat{y}_i^{\text{forecast}}}{\pi_i}}_{\text{Real-time Correction}} \right) 
+\hat{\mu}_{\text{Hist-PPD}} = \frac{1}{N} \left( \underbrace{\sum_{i \in U} f_{\text{hist}}(\mathbf{z}_i)}_{\text{Population Projection}} + \underbrace{\sum_{i \in S} \frac{y_i^\star - f_{\text{hist}}(\mathbf{z}_i)}{\pi_i}}_{\text{Sample-based Adjustment}} \right) 
 \]
-where:
-\begin{enumerate}
-    \item $\hat{y}_i^{\text{forecast}} = f(y_i^{(t-1)})$ is the baseline prediction derived from historical data (Scenario 2 component).
-    \item $y_i^\star$ is the mass-imputed current value using rich real-time signals $\mathbf{x}_i$ (Scenario 1 component).
-\end{enumerate}
-Note that that this estimator is identical to the previous estimator. We're just applying it to a historical context. 
-
-
+This formulation ensures that the historical model provides the primary signal structure, while the mass-imputed residuals correct for temporal drift and bias using the full sample information $S$, rather than the restricted respondent set $S_r$.
 
 \paragraph{Scenario 5: Robust Integration (The Hist-PPD-DR Estimator).}
 
@@ -303,15 +297,13 @@ Population ($U$) &
 \section{Model Specification}
 \label{sec:model_spec}
 
-To implement the Hist-PPD-DR estimator defined in Equation \eqref{eq:PPD-DR-total-E}, we must specify two distinct working models: the outcome model $m_S(\mathbf{v}_i)$ used for mass imputation, and the response probability model $\rho(\mathbf{v}_i)$ used for propensity weighting.
+To implement the Hist-PPD-DR estimator defined in Equation \eqref{eq:PPD-DR-total-E}, we must specify two distinct working models: the outcome model $m_S(\mathbf{v}_i)$ used for mass imputation, and the response probability model $\hat{p}_i(\mathbf{v}_i)$ used for propensity weighting.
 
-Recent literature in survey sampling emphasizes that while Double Robustness protects against the misspecification of one model, the finite-sample performance of the estimator depends heavily on the stability and predictive power of these models \citep{Haziza2017}. Consequently, we adopt a hybrid modeling strategy that leverages the strengths of machine learning for prediction and the stability of parametric estimation for weighting.
+Recent literature in survey sampling emphasizes that while Double Robustness protects against the misspecification of one model, the finite-sample performance of the estimator depends heavily on the stability and predictive power of these models \cite{Haziza2017}. Consequently, we adopt a hybrid modeling strategy that leverages the strengths of machine learning for prediction and the stability of parametric estimation for weighting.
 
 \subsection{Imputation Model: Gradient Boosted Trees (XGBoost)}
 
-For the imputation step, our objective is to minimize the mean squared error of the predictions $\tilde{y}_i$. The relationship between the historical administrative data ($\mathbf{z}_i$) and the current sample data ($\mathbf{x}_i$) is likely characterized by complex interactions and non-linear ``drifts'' (e.g., uneven economic growth across sectors). Standard linear regression models may fail to capture these local deviations, leading to biased imputations.
-
-We employ \textbf{XGBoost} (eXtreme Gradient Boosting), a scalable implementation of gradient boosted decision trees \citep{Chen2016}. XGBoost constructs an ensemble of weak learners (regression trees) that sequentially correct the residuals of prior trees. We select XGBoost for this simulation over other methods for three specific reasons:
+For the imputation step, our objective is to minimize the mean squared error of the predictions $\tilde{y}_i$. The relationship between the historical administrative data ($\mathbf{z}_i$) and the current sample data ($\mathbf{x}_i$) is may be complex and non-linear. We use \textbf{XGBoost} (eXtreme Gradient Boosting), a scalable implementation of gradient boosted decision trees \cite{Chen2016}. XGBoost constructs an ensemble of weak learners (regression trees) that sequentially correct the residuals of prior trees. We select XGBoost for this simulation over other methods for three specific reasons:
 
 \begin{enumerate}
     \item \textbf{Automatic Interaction Detection:} Unlike linear models, which require explicit specification of interaction terms (e.g., $\mathbf{x}_i \times \mathbf{z}_i$), XGBoost automatically learns complex non-linear interactions between the frame and sample data.
@@ -321,11 +313,7 @@ We employ \textbf{XGBoost} (eXtreme Gradient Boosting), a scalable implementatio
 
 \subsection{Propensity Score Model: The Parametric Score Method}
 
-For the propensity score estimation $\hat{\rho}_i$, we employ a parametric logistic regression model estimated via the \textbf{Score Method} (Maximum Likelihood), rather than a machine learning classifier.
-
-While machine learning methods like XGBoost are powerful classifiers, they are often ill-suited for propensity weighting in finite population inference. A known issue with boosting or random forests in this context is ``perfect separation,'' where the model assigns probabilities close to 0 or 1. In a weighting context (Scenario 1 and 3), this results in extreme weights ($\hat{\rho}_i^{-1}$) that can destabilize the estimator and drastically inflate variance.
-
-In contrast, the Score Method (Logistic Regression) provides two critical statistical properties required for robust weighting \citep{KimHaziza2014}:
+For the propensity score estimation $\hat{p}_i$, we employ a parametric logistic regression model estimated via the \textbf{Score Method} (Maximum Likelihood), rather than a machine learning classifier. While machine learning methods like XGBoost are powerful classifiers, they are often ill-suited for propensity weighting in finite population inference. A known issue with boosting or random forests in this context is ``perfect separation,'' where the model assigns probabilities close to 0 or 1. In a weighting context (Scenario 1 and 3), this results in extreme weights ($\hat{p}_i^{-1}$) that can destabilize the estimator and drastically inflate variance. In contrast, the Score Method (Logistic Regression) provides two critical statistical properties required for robust weighting \cite{KimHaziza2014}:
 
 \begin{enumerate}
     \item \textbf{Calibration Constraints:} The maximum likelihood estimator $\hat{\boldsymbol{\alpha}}$ for the logistic model solves the score equations:
@@ -354,15 +342,15 @@ A major challenge in using the estimator proposed in Scenario 3 is variance esti
 To properly account for both the sampling design and the uncertainty in the imputation mechanism, we recommend a replication-based approach, specifically the bootstrap.
 
 \paragraph{The Bootstrap for Mass Imputation.}
-To estimate the variance of $\hat{\mu}_{\text{MCMI}}$, we employ a bootstrap procedure that captures the variability of the model fitting process. The procedure is as follows:
+To estimate the variance of our estimators, we employ a bootstrap procedure that captures the variability of the model fitting process. The procedure is as follows:
 
 \begin{enumerate}
     \item \textbf{Generate Replicates:} Draw $B$ bootstrap samples $S^{(b)}$ from the original sample $S$ using the design weights (e.g., using the rescaling bootstrap for complex designs).
     \item \textbf{Re-Impute:} For each bootstrap sample $b = 1, \dots, B$:
     \begin{itemize}
-        \item Refit the imputation model $\hat{m}^{(b)}(\mathbf{v}_i)$ using only the respondents in the bootstrap replicate $S_r^{(b)}$.
+        \item Refit the imputation model $\hat{m}_{S_{r}}^{(b)}(\mathbf{v}_i)$ using only the respondents in the bootstrap replicate $S_r^{(b)}$.
         \item Generate new imputed values $\tilde{y}_i^{(b)}$ for the non-respondents in that replicate.
-        \item Refit the projection model $\hat{f}^{(b)}(\mathbf{z}_i)$ on the completed bootstrap sample.
+        \item Refit the projection model $\hat{m_S}^{(b)}(\mathbf{z}_i)$ on the completed bootstrap sample.
     \end{itemize}
     \item \textbf{Calculate Estimate:} Compute the estimator $\hat{\mu}^{(b)}$ for each replicate.
 \end{enumerate}

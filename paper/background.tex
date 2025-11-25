@@ -1,4 +1,167 @@
-\section{Background}
+\section{Literature Review}
+\section{Prediction-Powered Inference (PPI): Notes}
+
+\begin{algorithm}[H]
+\caption{Prediction-powered mean estimation (i.i.d. version)}
+\label{alg:mean_estimation}
+\footnotesize
+\begin{algorithmic}[1]
+\State \textbf{Input:} labeled data $(X,Y)$, unlabeled features $\tilde{X}$, predictor $f$, error level $\alpha \in (0,1)$
+\State $\hat{\theta}^{\text{PP}} \leftarrow \tilde{\theta}^f - \hat{\Delta} := \frac{1}{N}\sum_{i=1}^{N} f(\tilde{X}_i) - \frac{1}{n}\sum_{i=1}^{n} (f(X_i) - Y_i)$
+\State $\hat{\sigma}_{\tilde{f}}^2 \leftarrow \frac{1}{N}\sum_{i=1}^{N}(f(\tilde{X}_i) - \tilde{\theta}^f)^2$
+\State $\hat{\sigma}_{f-Y}^2 \leftarrow \frac{1}{n}\sum_{i=1}^{n}(f(X_i) - Y_i - \hat{\Delta})^2$
+\State $w_{\alpha} \leftarrow z_{1-\alpha/2} \sqrt{\frac{\hat{\sigma}_{f-Y}^2}{n} + \frac{\hat{\sigma}_{\tilde{f}}^2}{N}}$
+\State \textbf{Output:} $C_{\alpha}^{\text{PP}} = (\hat{\theta}^{\text{PP}} \pm w_{\alpha})$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{itemize}
+  \item \textbf{Expensive (gold) measurements:} a labeled set $(X,Y)=\{(X_i,Y_i)\}_{i=1}^n$ of size $n$ where $Y$ is observed.
+  \item \textbf{Cheap measurements (on the same $X$):} model predictions $f(X_i)$ for $i\in[n]$ computed by a \emph{fixed} rule $f:\mathcal X\!\to\!\mathbb R$. These are \emph{coupled} with the gold labels because they are predictions for the very same inputs $\{X_i\}_{i=1}^n$; we use them only to quantify and correct prediction error.
+  \item \textbf{Large pool of cheap measurements:} predictions on a large unlabeled feature set $\tilde X=\{\tilde X_i\}_{i=1}^N$ with $N\gg n$, i.e., $f(\tilde X)=\{f(\tilde X_i)\}_{i=1}^N$.
+\end{itemize}
+
+We treat $f$ as exogenous for inference (e.g., trained on independent data or obtained by sample-splitting). The estimand for this warm-up is the population mean outcome $\theta^*=\mathbb E[Y]$.
+The target is a property of the population distribution $P$, e.g., the mean outcome $\estimand{\theta^*=\mathbb E[Y]}$, and the inferential goal is a \emph{valid $(1-\alpha)$ confidence interval} for $\theta^*$; the point estimate is a means to that end.
+
+
+\paragraph{Classical vs.\ PPI mean estimators.}
+The classical estimator uses only gold labels:
+\begin{equation}
+\hat\theta^{\text{class}}=\frac{1}{n}\sum_{i=1}^n Y_i.
+\label{eq:classical-mean}
+\end{equation}
+PPI splits the job into (i) an \emph{imputation on cheap data} and (ii) a \emph{rectifier} learned on gold data:
+\begin{align}
+\predonly{\tilde\theta^{\,f}} &:= \frac{1}{N}\sum_{i=1}^{N} f(\tilde X_i), \tag{1.1}\\
+\rectifier{\hat\Delta} &:= \frac{1}{n}\sum_{i=1}^{n}\bigl(f(X_i)-Y_i\bigr), \tag{1.2}\\
+\ppi{\hat\theta^{\mathrm{PP}}} &:= \tilde\theta^{\,f}-\hat\Delta \\
+&= \frac{1}{N} \sum_{i=1}^{N} f(\tilde{X}_i) - \frac{1}{n} \sum_{i=1}^{n} \left( f(X_i) - Y_i \right). \tag{1.3}
+\end{align}
+Intuition: if $f$ is accurate on the gold set, then $\hat\Delta\approx 0$ and $\hat\theta^{\mathrm{PP}}\approx \frac{1}{N}\sum_{i=1}^N \tilde Y_i$, which enjoys much lower variance when $N\!\gg\! n$.
+
+With
+\[
+\predonly{\hat\sigma_f^2}:=\frac{1}{N}\sum_{i=1}^N\bigl(f(\tilde X_i)-\tilde\theta^{\,f}\bigr)^2,\qquad
+\rectifier{\hat\sigma^2_{f-Y}}:=\frac{1}{n}\sum_{i=1}^n\bigl(f(X_i)-Y_i-\hat\Delta\bigr)^2,
+\]
+a normal approximation yields the $(1-\alpha)$ PPI interval
+\begin{equation}
+\label{eq:iid-ci}
+\ppi{C_\alpha^{\mathrm{PP}}=\Bigl[\hat\theta^{\mathrm{PP}}\pm z_{1-\alpha/2}\sqrt{\frac{\rectifier{\hat\sigma^2_{f-Y}}}{n}+\frac{\predonly{\hat\sigma_f^2}}{N}}\Bigr]}. \tag{1.4}
+\end{equation}
+For comparison, the classical interval is
+\begin{equation}
+C_\alpha^{\text{class}}=
+\Bigl[\hat\theta^{\text{class}}\pm z_{1-\alpha/2}\sqrt{\frac{\widehat{\mathrm{Var}}(Y)}{n}}\Bigr].
+\label{eq:classical-ci}
+\end{equation}
+When $f$ predicts well, $\hat\Delta\approx 0$, the width of~\eqref{eq:iid-ci} is dominated by $\rectifier{\hat\sigma^2_{f-Y}}/n$ and is typically much smaller than~\eqref{eq:classical-ci}.
+
+
+% =========================================================
+\paragraph{General Convex Estimand Framework}
+Let $\ell_\theta$ be a convex loss and define 
+\begin{equation}
+    \estimand{\theta^* = \arg\min_{\theta \in \mathbb{R}^p} \mathbb{E}[\ell_{\theta}(X, Y)]}. \tag{2.1}
+\end{equation}
+With (sub)gradient $g_\theta=\partial_\theta\ell_\theta$, define the rectifier
+\begin{equation}
+\rectifier{\Delta_\theta} \;=\; \mathbb E\big[ g_\theta(X,Y) - g_\theta(X,f(X)) \big].
+\end{equation}
+For each $\theta$, form two confidence sets using off-the-shelf mean CI’s: (i) $R_\delta(\theta)$ for $\Delta_\theta$ from labeled data; (ii) $T_{\alpha-\delta}(\theta)$ for $g^f_\theta:=\mathbb E[g_\theta(X,f(X))]$ from unlabeled predictions.
+\[
+\mathbb{E}[g_{\theta}(X,Y)] = \predonly{\mathbb{E}[g_{\theta}(X, f(X))]} + \rectifier{\mathbb{E}[g_{\theta}(X,Y) - g_{\theta}(X,f(X))]} = 0.
+\]
+Then define the \emph{prediction-powered confidence set}
+\begin{equation}
+\ppi{C_\alpha^{\mathrm{PP}}} \;=\; \Big\{\theta:\; 0\in R_\delta(\theta) + T_{\alpha-\delta}(\theta)\Big\},
+\end{equation}
+where $+$ denotes the Minkowski sum. Under a mild nondegeneracy condition, $\mathbb P(\theta^*\in C_\alpha^{\mathrm{PP}})\ge 1-\alpha$.
+
+
+
+
+\section{Overview of the Prediction-Powered Bootstrap (PPBoot)}
+
+\paragraph{Setting.}
+We observe a small labeled sample \((X,Y)=\{(X_i,Y_i)\}_{i=1}^n\) and a large unlabeled sample \(\tilde X=\{\tilde X_j\}_{j=1}^N\) with \(N \gg n\). A fixed, data-independent predictor \(f:\mathcal X\to\mathcal Y\) provides \(f(X)\) and \(f(\tilde X)\).
+Our inferential target is a generic estimand \(\theta^\star\), and \(\hat\theta(\cdot)\) denotes any standard plug-in estimator for \(\theta^\star\) when outcomes are observed (e.g., means, quantiles, regression coefficients). 
+
+\paragraph{Core idea (functional form).}
+PPBoot builds a bootstrap replicate that \emph{adds} an imputed estimate from the large unlabeled set and \emph{subtracts} the model's contribution on the small labeled set so that prediction error cancels to first order:
+\[
+\theta_b^{\ast}
+\;=\;
+\hat\theta\!\big(\tilde X^{\ast},\, f(\tilde X^{\ast})\big)
+\;+\;
+\hat\theta\!\big(X^{\ast}, Y^{\ast}\big)
+\;-\;
+\hat\theta\!\big(X^{\ast}, f(X^{\ast})\big),
+\qquad b=1,\dots,B,
+\]
+where, at each bootstrap iteration \(b\), we resample with replacement
+\((X^{\ast},Y^{\ast})\) from \((X,Y)\) and \(\tilde X^{\ast}\) from \(\tilde X\).
+Applying the percentile rule to \(\{\theta_b^{\ast}\}_{b=1}^B\) yields the PPBoot confidence interval
+\[
+\CPPBoot
+=
+\Big[
+\quantile\!\big(\{\theta_b^\ast\}_{b=1}^B;\alpha/2\big),\;
+\quantile\!\big(\{\theta_b^\ast\}_{b=1}^B;1-\alpha/2\big)
+\Big].
+\]
+
+\paragraph{How it works (mechanics).}
+\begin{itemize}
+  \item \textbf{Resample two sources:} draw \( (X^{\ast},Y^{\ast}) \) from the labeled pairs and \( \tilde X^{\ast} \) from the unlabeled features, independently, at each bootstrap iteration.
+  \item \textbf{Compute a bias-corrected replicate:}
+  \(\hat\theta(\tilde X^{\ast}, f(\tilde X^{\ast}))\) is a high-throughput, imputed estimate using all (pseudo-)unlabeled examples; 
+  \(\hat\theta(X^{\ast}, Y^{\ast})-\hat\theta(X^{\ast}, f(X^{\ast}))\) is a \emph{rectifier} measured on the labeled data that removes bias introduced by replacing \(Y\) with \(f(X)\).
+  \item \textbf{Percentile interval:} summarize the empirical distribution of \(\{\theta_b^\ast\}\) with the \(\alpha/2\) and \(1-\alpha/2\) quantiles.
+\end{itemize}
+
+\paragraph{Why it works (intuition).}
+The replicate is a bootstrap analogue of a \emph{model-assisted} correction:
+if \(f\) is reasonably accurate, then on the labeled resample
+\(\hat\theta(X^{\ast}, f(X^{\ast})) \approx \hat\theta(X^{\ast}, Y^{\ast})\), so the correction term is near zero and
+\[
+\theta_b^{\ast}\;\approx\;\hat\theta\!\big(\tilde X^{\ast}, f(\tilde X^{\ast})\big).
+\]
+That imputed piece leverages \(N \gg n\) examples, giving low variance.
+When \(f\) is imperfect, the labeled-data difference
+\(\hat\theta(X^{\ast}, Y^{\ast})-\hat\theta(X^{\ast}, f(X^{\ast}))\) \emph{de-biases} the unlabeled imputation at each bootstrap draw.
+This yields a bootstrap distribution concentrated like the large-\(N\) imputation but centered correctly by the small labeled set—hence intervals that are (i) valid and (ii) typically much shorter than classical, labeled-only bootstrap intervals.
+
+\paragraph{What you need to run it.}
+\begin{itemize}
+  \item A black-box prediction rule \(f\) independent of \((X,Y),\tilde X\).
+  \item Any estimator \(\hat\theta\) you would normally use if outcomes were observed (means, quantiles, GLM coefficients, M-estimators, etc.).
+  \item A bootstrap size \(B\) (hundreds to a few thousands are typical); resample labeled and unlabeled pools \emph{separately with replacement}.
+\end{itemize}
+
+\paragraph{Algorithm (\PPBoot).}
+\begin{enumerate}
+  \item For \(b=1,\dots,B\):
+    \begin{enumerate}
+      \item Resample \((X^{\ast},Y^{\ast})\) from \((X,Y)\) and \(\tilde X^{\ast}\) from \(\tilde X\) (with replacement).
+      \item Compute \(\displaystyle \theta_b^{\ast}=\hat\theta(\tilde X^{\ast}, f(\tilde X^{\ast}))+\hat\theta(X^{\ast},Y^{\ast})-\hat\theta(X^{\ast}, f(X^{\ast}))\).
+    \end{enumerate}
+  \item Return \(\displaystyle \CPPBoot=\big[\quantile(\{\theta_b^{\ast}\};\alpha/2),\;\quantile(\{\theta_b^{\ast}\};1-\alpha/2)\big]\).
+\end{enumerate}
+
+\paragraph{When to expect gains.}
+Whenever \(f\) reduces outcome noise (so that \(f(X)\) is close to \(Y\)) and the unlabeled pool is large, the PPBoot replicates behave roughly like large-\(N\) estimators while the rectifier preserves validity. In short: \emph{better predictions \(\Rightarrow\) narrower intervals}, with no modeling assumptions required for \(f\) or \(\hat\theta\).
+
+
+
+
+
+
+
+
+
+
 \subsection{Major estimators for item nonresponse (population total)}
 
 This section reviews widely used estimators for the finite–population total in the presence of item nonresponse, with a focus on designs common in official and social surveys. Throughout, let $U$ denote a finite population of size $N$, and let $S\subseteq U$ be a probability sample of size $n$ with design inclusion (strictly positive)probabilities $\pi_i$ and corresponding design weights $d_i=1/\pi_i$. For unit $i\in U$, let $y_i$ be the study variable of interest (population total $T_y=\sum_{i\in U} y_i$). Let $\mathbf v_i$ denote auxiliary variables observed for all sampled units (available on $s$), and let $\mathbf z_i$ denote auxiliary variables observed for all population units (available on $U$; e.g., frame or administrative variables). The response indicator for $y_i$ is $r_i\in\{0,1\}$, with $r_i=1$ if $y_i$ is observed and $r_i=0$ otherwise; respondents and nonrespondents are $S_r=\{i\in s:r_i=1\}$ and $S_m=\{i\in s:r_i=0\}$. We adopt the standard \emph{missing at random given $\mathbf v_i$ (MAR)} assumption, $\Pr(r_i=1\mid \mathbf v_i,y_i)=\Pr(r_i=1\mid \mathbf v_i)\equiv \rho(\mathbf v_i)$, and write $\hat\rho_i=\widehat{\Pr}(r_i=1\mid \mathbf v_i)$ for a fitted response–propensity model (typically a design-weighted logistic/probit; cf.\ \parencite{little_1986_isr,kott_1994_jasa,kott_2006_surveymethodology}). When an outcome model $m(\mathbf v;\beta)$ for $E(y\mid \mathbf v)$ is fit on respondents (with design weights), we denote the prediction by $\tilde y_i=\widehat m_s(\mathbf v_i)$. When an externally trained or frame-based assisting model is available, we write $f(\mathbf z_i)$ and treat $\sum_{i\in U} f(\mathbf z_i)$ as fixed with respect to the current sample draw.
