@@ -70,7 +70,7 @@
 % --------------------------------------------------------------------------
 % 6. BIBLIOGRAPHY
 % --------------------------------------------------------------------------
-\usepackage[backend=biber]{biblatex}
+\usepackage[style=authoryear]{biblatex}
 \addbibresource{paper/references.bib} % My bib file location
 
 % --------------------------------------------------------------------------
@@ -86,6 +86,9 @@
 \newcommand{\ppi}[1]{{\color{ppicolor}#1}}
 \newcommand{\newadd}[1]{{\color{newcontent}#1}}
 \newcommand{\axiom}[1]{{\color{axiomcolor}#1}}
+\newcommand{\CPPBoot}{C_\alpha^{\text{PPBoot}}}
+\newcommand{\quantile}{\text{quantile}}
+\newcommand{\PPBoot}{PPBoot}
 
 % Theorem Environments (Theorems, Props, Definitions)
 \newtheorem{theorem}{Theorem}
@@ -106,7 +109,7 @@
 % ==========================================================================
 \title{Report: Prediction-Powered Inference with Missing Data\\ \large(Adapting Pre-trained Models for Finite Population Inference)}
 \author{Hanan Ather}
-\date{December 2025}
+\date{December 2025 \\[.5cm] \textcolor{red}{\textbf{\large DRAFT: Work in Progress -- For Review Only}}}
 
 \begin{document}
 
@@ -124,9 +127,10 @@
 % --------------------------------------------------------------------------
 \section{Introduction}
 % My notes and placeholders
-\todo[inline, color=orange]{Strategy: Start with the Historical Data scenario.}
-\todo[inline, color=green]{Status: Tables are fixed, Notation is standardized to 'k' and totals.}
-
+\todo[inline, color=green]{Done: the Historical Data scenario}
+\todo[inline,]{Todo: Additional diagrams}
+\todo[inline,]{Todo: Simulation for Scenario 5}
+\todo[inline,]{Todo: Section of data drift/model drift}
 % Imports from my other files
 % \include{paper/background}
 \include{paper/v0}

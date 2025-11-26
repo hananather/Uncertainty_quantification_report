@@ -3,8 +3,7 @@
 % =========================================================
 \newpage
 
-\section{Design-Based Estimators When $\mathbf{x}$ is Missing on the Frame}
-
+\section{Design-Based Estimators When \texorpdfstring{$\mathbf{x}$}{x} is Missing on the Frame}
 We now present estimators that preserve the fundamental projection identity by replacing the population functional $\sum_U f(\mathbf{x}_i)$ with appropriate estimators when $\mathbf{x}$ is not available for the entire frame. These approaches generalize the projection estimators discussed in previous sections by explicitly handling the missingness of $\mathbf{x}$ on the frame level.
 
 \subsection{Multiple Imputation (MI) for $\mathbf{x}$}
@@ -26,8 +25,7 @@ Variance is estimated using Rubin’s rules: $V_{\text{Total}}=\bar V_W + (1+\fr
     \item[(ii)] No extra bias correction is required beyond the difference estimator identity; Rubin’s rules automatically account for the added uncertainty due to imputation.
 \end{enumerate}
 
-\subsection{Stratification by $\mathbf{x}$-Observability (Domain Estimation)}
-
+\subsection{Stratification by \texorpdfstring{$\mathbf{x}$}{x}-Observability (Domain Estimation)}
 Consider the case where the population $U$ can be partitioned into two domains based on the availability of $\mathbf{x}$: $U_1=\{\text{units where }\mathbf{x} \text{ is known}\}$ and $U_2=\{\text{units where }\mathbf{x} \text{ is missing}\}$. Assume the domain sizes $N_1, N_2$ are known from the frame.
 
 \paragraph{Domain-scaled weights.}
@@ -51,8 +49,7 @@ The combined estimator is the weighted sum:
 \paragraph{Validity.}
 This approach is an application of standard \emph{domain estimation}. It does not require the missingness mechanism to be MCAR. Design-consistency holds as long as the domains are identifiable on the frame. Variance can be estimated using design-consistent linearization or replicate weights that respect the domain structure.
 
-\subsection{IPW for $\mathbf{x}$-Observability on the Frame}
-
+\subsection{IPW for \texorpdfstring{$\mathbf{x}$}{x}-Observability on the Frame}
 If $\mathbf{x}$ is missing for some units in the population, we can assume MAR given $\mathbf{z}$ with propensity $\pi_j^X=\Pr(R_j^X=1\mid\mathbf{z}_j)$, where $R_j^X$ indicates that $\mathbf{x}$ is observed for unit $j$. We estimate these propensities as $\hat{\pi}_j^X$. We replace the population sum terms with their Horvitz--Thompson IPW counterparts:
 
 \begin{equation}
@@ -79,8 +76,7 @@ If $\mathbf{x}$ is missing for some units in the population, we can assume MAR g
     \item[(iii)] Variance estimation should use linearization or replicate weights, with valid re-estimation of the propensities $\hat{\pi}^X$ within each replicate.
 \end{enumerate}
 
-\subsection{AIPW (Doubly Robust) for $f(\mathbf{x})$}
-
+\subsection{AIPW (Doubly Robust) for \texorpdfstring{$f(\mathbf{x})$}{f(x)}}
 To gain robustness against misspecification of the propensity model $\hat{\pi}^X$, we fit a regression model linking the frame variables to the sample variables: $\hat{g}(\mathbf{z})\approx \mathbb{E}[f(\mathbf{x})\mid \mathbf{z}]$. We replace the $f(\mathbf{x})$ terms with Augmented IPW (AIPW) corrections on both the population and the sample side.
 
 \begin{equation}

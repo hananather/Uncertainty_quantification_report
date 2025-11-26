@@ -1,0 +1,357 @@
+
+
+\newpage
+% ------------------------------------------------- %
+% ------------------- TABLE 1  ------------------- %
+% ------------------------------------------------- %
+
+\renewcommand{\arraystretch}{2.5}   % try 1.3–1.6 for more spacing
+\begin{table}[t]
+\centering
+\scriptsize    %  \small, \footnotesize or \scriptsize
+\caption{Summary of major estimators for item nonresponse (finite–population total).}
+
+\resizebox{\textwidth}{!}{
+\begin{tabular}{p{3cm} p{3.1cm} p{1.7cm} p{2.4cm} p{3.2cm}}
+\toprule
+\textbf{Estimator} &
+\textbf{Formula} &
+\textbf{Uses respondents only?} &
+\textbf{Model required} &
+\textbf{Assumptions for consistency} \\
+\midrule
+
+Naïve  &
+$\widehat T_{\mathrm{naive}} = \sum_{i\in S_r} d_i\,y_i$ &
+Yes &
+None &
+MCAR \\
+
+Propensity weighting  &
+$\widehat T_{PW} = \sum_{i\in S_r} \frac{d_i}{\hat\rho_i}\, y_i$ &
+Yes &
+Response model $\rho(\mathbf v)$ &
+MAR + correct $\rho(\mathbf v)$ + positivity \\
+
+Calibration/GREG &
+$\widehat T_{\mathrm{calib}}=\sum_{i\in S_r} d_i^\ast y_i$ \newline
+$\widehat T_{reg}=\sum_{i\in U} f(\mathbf z_i)+\sum_{i\in s} d_i\{y_i - f(\mathbf z_i)\}$ &
+Yes &
+Linear assisting model $f(\mathbf z)$ &
+Aux $\mathbf z$ predictive of $y$; correct assisting model for exact unbiasedness \\
+
+Imputation Model &
+$\widehat T_{IMP}= \sum_{i\in S_r} d_i y_i + \sum_{i\in S_m} d_i \tilde y_i$ &
+No &
+Model $m(\mathbf v)$ &
+MAR + correct $m(\mathbf v)$ \\
+
+Doubly robust (AIPW) &
+$\widehat T_{DR} = \sum_{i\in s} d_i \tilde y_i + 
+\sum_{i\in S_r} \frac{d_i}{\hat\rho_i}(y_i - \tilde y_i)$ &
+No &
+ $m(\mathbf v)$ and $\rho(\mathbf v)$ &
+MAR + positivity + one correct model \\
+
+Multiply robust (MR) &
+$\widehat T_{MR} = \sum_{i\in S_r} d_i y_i + \sum_{i\in S_m} d_i \tilde y_i^{MR}$ &
+No &
+Multiple models &
+Any one working model correct \\
+
+PPD–DR  &
+$\displaystyle \widehat T_y^{\mathrm{PPD\text{-}DR}}
+  = \sum_{i\in U} f(\mathbf z_i)
+  + \sum_{i\in s} d_i\{\tilde y_i - f(\mathbf z_i)\}
+  + \sum_{i\in S_r}\frac{d_i}{\hat\rho_i}(y_i-\tilde y_i)$ &
+No &
+$f(\mathbf z)$, $m(\mathbf v)$ and $\rho(\mathbf v)$ &
+MAR + positivity; consistent if either the outcome model $m(\cdot)$ or the response model $\rho(\cdot)$ is correct (with $f$ treated as fixed when externally trained) \\
+
+\bottomrule
+\end{tabular}}
+\end{table}
+
+
+\newpage
+% ------------------------------------------------- %
+% ------------------- TABLE 2  ------------------- %
+% ------------------------------------------------- %
+
+\begin{landscape}
+
+\renewcommand{\arraystretch}{2.5}   % try 1.3–1.6 for more spacing
+
+\begin{table}[t]
+\centering
+\footnotesize    %  \small, \footnotesize or \scriptsize
+\caption{Summary of major estimators for item nonresponse (finite–population total).}
+
+\begin{tabular}{p{3.5cm} p{5.5cm} p{2.2cm} p{3cm} p{4cm}}
+\toprule
+\textbf{Estimator} &
+\textbf{Formula} &
+\textbf{Uses respondents only?} &
+\textbf{Model required} &
+\textbf{Assumptions for consistency} \\
+\midrule
+
+Naïve  &
+$\widehat T_{\mathrm{naive}} = \sum_{i\in S_r} d_i\,y_i$ &
+Yes &
+None &
+MCAR \\
+
+Propensity weighting  &
+$\widehat T_{PW} = \sum_{i\in S_r} \frac{d_i}{\hat\rho_i}\, y_i$ &
+Yes &
+Response model $\rho(\mathbf v)$ &
+MAR + correct $\rho(\mathbf v)$ + positivity \\
+
+Calibration/GREG &
+$\widehat T_{\mathrm{calib}}=\sum_{i\in S_r} d_i^\ast y_i$ \newline
+$\widehat T_{reg}=\sum_{i\in U} f(\mathbf z_i)+\sum_{i\in s} d_i\{y_i - f(\mathbf z_i)\}$ &
+Yes &
+Linear assisting model $f(\mathbf z)$ &
+Aux $\mathbf z$ predictive of $y$; correct assisting model for exact unbiasedness \\
+
+Imputation Model &
+$\widehat T_{IMP}= \sum_{i\in S_r} d_i y_i + \sum_{i\in S_m} d_i \tilde y_i$ &
+No &
+Model $m(\mathbf v)$ &
+MAR + correct $m(\mathbf v)$ \\
+
+Doubly robust (AIPW) &
+$\widehat T_{DR} = \sum_{i\in s} d_i \tilde y_i + 
+\sum_{i\in S_r} \frac{d_i}{\hat\rho_i}(y_i - \tilde y_i)$ &
+No &
+$m(\mathbf v)$ and $\rho(\mathbf v)$ &
+MAR + positivity + one correct model \\
+
+Multiply robust (MR) &
+$\widehat T_{MR} = \sum_{i\in S_r} d_i y_i + \sum_{i\in S_m} d_i \tilde y_i^{MR}$ &
+No &
+Multiple models &
+Any one working model correct \\
+
+PPD–DR  &
+$\displaystyle \widehat T_y^{\mathrm{PPD\text{-}DR}}
+  = \sum_{i\in U} f(\mathbf z_i)
+  + \sum_{i\in s} d_i\{\tilde y_i - f(\mathbf z_i)\}
+  + \sum_{i\in S_r}\frac{d_i}{\hat\rho_i}(y_i-\tilde y_i)$ &
+No &
+$f(\mathbf z)$, $m(\mathbf v)$ and $\rho(\mathbf v)$ &
+MAR + positivity; consistent if either the outcome model $m(\cdot)$ or the response model $\rho(\cdot)$ is correct (with $f$ treated as fixed when externally trained) \\
+
+\bottomrule
+\end{tabular}
+
+\end{table}
+
+\end{landscape}
+
+\newpage
+
+
+% ------------------------------------------------- %
+% ------------------- ref table  ------------------- %
+% ------------------------------------------------- %
+
+\begin{table}[t]
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.6}
+\caption{EXAMPLE. REMOVE LATER. CLICKABLE REF.. Summary of major estimators for item nonresponse with key references.}
+
+\resizebox{\textwidth}{!}{
+\begin{tabular}{p{3.2cm} p{3.4cm} p{2.1cm} p{2.8cm} p{3.0cm}}
+\toprule
+\textbf{Estimator} &
+\textbf{Formula} &
+\textbf{Complete-case only?} &
+\textbf{Model required} &
+\textbf{Key references} \\
+\midrule
+
+Naïve (complete-case) &
+$\widehat T_{\mathrm{naive}} = \sum_{i\in S_r} d_i y_i$ &
+Yes &
+None &
+Cochran (1977); Little \& Rubin (2002) \\
+
+Propensity weighting (IPW) &
+$\widehat T_{PW} = \sum_{i\in S_r} \frac{d_i}{\hat\rho_i} y_i$ &
+Yes &
+Response model $\rho(\mathbf v)$ &
+Little (1986); Kott (1994); Robins et al.\ (1994) \\
+
+Calibration / GREG / PPD &
+$\widehat T_{\mathrm{calib}}=\sum_{i\in S_r} d_i^\ast y_i$ \newline
+$\widehat T_{reg}=\sum_{i\in U} f(\mathbf z_i)+\sum_{i\in s} d_i(y_i - f(\mathbf z_i))$ &
+Yes &
+Assisting model $f(\mathbf z)$ &
+Deville \& Särndal (1992);
+Isaki \& Fuller (1982);
+Särndal \& Lundström (2005) \\
+
+Imputation estimator (outcome model) &
+$\widehat T_{IMP}= \sum_{i\in S_r} d_i y_i + \sum_{i\in S_m} d_i \tilde y_i$ &
+No &
+Outcome model $m(\mathbf v)$ &
+Haziza (2009);
+Kim \& Fuller (2004);
+Haziza \& Rao (2006) \\
+
+Doubly robust (AIPW) &
+$\widehat T_{DR} = \sum_{i\in s} d_i \tilde y_i
++ \sum_{i\in S_r} \frac{d_i}{\hat\rho_i}(y_i - \tilde y_i)$ &
+No &
+$m(\mathbf v)$ and/or $\rho(\mathbf v)$ &
+Robins et al.\ (1994);
+Bang \& Robins (2005);
+Kim \& Haziza (2014) \\
+
+Multiply robust (MR) &
+$\widehat T_{MR} = \sum_{i\in S_r} d_i y_i
++ \sum_{i\in S_m} d_i \tilde y_i^{MR}$ &
+No &
+Multiple models &
+Chen \& Haziza (2017);  
+Han (2014); Han \& Wang (2013) \\
+
+PPD–DR (prediction–plus–difference DR) &
+$\widehat T_y^{\mathrm{PPD\text{-}DR}}
+= \sum_{i\in U} f(\mathbf z_i)
++ \sum_{i\in s} d_i(\tilde y_i - f(\mathbf z_i))
++ \sum_{i\in S_r}\frac{d_i}{\hat\rho_i}(y_i-\tilde y_i)$ &
+No &
+Assisting model and either $m(\mathbf v)$ or $\rho(\mathbf v)$ &
+Kim \& Haziza (2014);  
+Särndal \& Lundström (2005) \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+
+
+\newpage
+% ------------------------------------------------- %
+% ------------------- TABLE 1  ------------------- %
+% ------------------------------------------------- %
+
+\renewcommand{\arraystretch}{2.5}
+\begin{table}[t]
+\centering
+\scriptsize
+\caption{EXAMPLE. REMOVE LATER. Summary of major estimators for item nonresponse (finite–population total).}
+
+\resizebox{\textwidth}{!}{
+\begin{tabular}{p{2.7cm} p{3cm} p{1.7cm} p{2.4cm} p{3.2cm} p{0.8cm}}
+\toprule
+\textbf{Estimator} &
+\textbf{Formula} &
+\textbf{Complete-case only?} &
+\textbf{Model required} &
+\textbf{Assumptions for consistency} &
+\textbf{Ref.} \\
+\midrule
+
+Naïve &
+$\widehat T_{\mathrm{naive}} = \sum_{i\in S_r} d_i\,y_i$ &
+Yes &
+None &
+MCAR &
+\hyperref[ref:naive]{(1)} \\
+
+Propensity weighting  &
+$\widehat T_{PW} = \sum_{i\in S_r} \frac{d_i}{\hat\rho_i}\, y_i$ &
+Yes &
+Response model $\rho(\mathbf v)$ &
+MAR + correct $\rho(\mathbf v)$ + positivity &
+\hyperref[ref:pw]{(2)} \\
+
+Calibration / GREG &
+$\widehat T_{\mathrm{calib}}=\sum_{i\in S_r} d_i^\ast y_i$ \newline
+$\widehat T_{reg}=\sum_{i\in U} f(\mathbf z_i)+\sum_{i\in s} d_i\{y_i - f(\mathbf z_i)\}$ &
+Yes &
+Assisting model $f(\mathbf z)$ &
+Aux $\mathbf z$ predictive of $y$; correct assisting model for unbiasedness &
+\hyperref[ref:greg]{(3)} \\
+
+Imputation Model &
+$\widehat T_{IMP}= \sum_{i\in S_r} d_i y_i + \sum_{i\in S_m} d_i \tilde y_i$ &
+No &
+Outcome model $m(\mathbf v)$ &
+MAR + correct $m(\mathbf v)$ &
+\hyperref[ref:imp]{(4)} \\
+
+Doubly robust (AIPW) &
+$\widehat T_{DR} = \sum_{i\in s} d_i \tilde y_i +
+\sum_{i\in S_r} \frac{d_i}{\hat\rho_i}(y_i - \tilde y_i)$ &
+No &
+$m(\mathbf v)$ and $\rho(\mathbf v)$ &
+MAR + positivity + one correct model &
+\hyperref[ref:dr]{(5)} \\
+
+Multiply robust (MR) &
+$\widehat T_{MR} = \sum_{i\in S_r} d_i y_i + \sum_{i\in S_m} d_i \tilde y_i^{MR}$ &
+No &
+Multiple models &
+Any one working model correct &
+\hyperref[ref:mr]{(6)} \\
+
+PPD–DR &
+$\displaystyle \widehat T_y^{\mathrm{PPD\text{-}DR}}
+  = \sum_{i\in U} f(\mathbf z_i)
+  + \sum_{i\in s} d_i\{\tilde y_i - f(\mathbf z_i)\}
+  + \sum_{i\in S_r}\frac{d_i}{\hat\rho_i}(y_i-\tilde y_i)$ &
+No &
+$f(\mathbf z)$, $m(\mathbf v)$, $\rho(\mathbf v)$ &
+MAR + positivity; consistent if $m(\cdot)$ or $\rho(\cdot)$ is correct &
+\hyperref[ref:ppddr]{(7)} \\
+
+\bottomrule
+\end{tabular}}
+\end{table}
+
+
+\paragraph{Illustrative data layout ($q=2$; two study items).}
+\begin{center}
+\begin{tabular}{c c c c c c c c}
+\toprule
+$k$ & $y_{k1}$ & $y_{k2}$ & $x_{k1}$ & $x_{k2}$ & $z_{k1}$ & $z_{k2}$ & $d_k$ \\
+\midrule
+1   & $y_{11}$ & $y_{12}$ & $x_{11}$ & $x_{12}$ & $z_{11}$ & $z_{12}$ & $d_1$ \\
+2   & $*$      & $y_{22}$ & $x_{21}$ & $x_{22}$ & $z_{21}$ & $z_{22}$ & $d_2$ \\
+3   & $y_{31}$ & $*$      & $x_{31}$ & $x_{32}$ & $z_{31}$ & $z_{32}$ & $d_3$ \\
+$\vdots$ & $\vdots$ & $\vdots$ & $\vdots$ & $\vdots$ & $\vdots$ & $\vdots$ & $\vdots$ \\
+$n$ & $y_{n1}$ & $y_{n2}$ & $x_{n1}$ & $x_{n2}$ & $z_{n1}$ & $z_{n2}$ & $d_n$ \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.25em}
+\emph{Notes:} ``$*$'' denotes an item-missing $y$ due to item nonresponse.
+For imputation, use $\mathbf{v}_k=[\mathbf{z}_k,\mathbf{x}_k]$.
+\end{center}
+
+\paragraph{Example illustration of file ($x$, $z$; $v_i=[z_i,x_i]$).}
+For exposition we show two $y$-items and two components each of $x$ and $z$; the relation
+$\mathbf{v}_i=(z_{i1},z_{i2},x_{i1},x_{i2})^\top$ is explicit.
+
+\begin{center}
+\begin{tabular}{c c c c c c c}
+\toprule
+$k$ & $y_k$ & $x_{k1}$ & $x_{k2}$ & $z_{k1}$ & $z_{k2}$ & $d_k$ \\
+\midrule
+1   & $y_1$ & $x_{11}$ & $x_{12}$ & $z_{11}$ & $z_{12}$ & $d_1$ \\
+2   & $*$   & $x_{21}$ & $x_{22}$ & $z_{21}$ & $z_{22}$ & $d_2$ \\
+3   & $y_3$ & $x_{31}$ & $x_{32}$ & $z_{31}$ & $z_{32}$ & $d_3$ \\
+$\vdots$ & $\vdots$ & $\vdots$ & $\vdots$ & $\vdots$ & $\vdots$ & $\vdots$ \\ % <--- FIXED HERE
+$n$ & $y_n$ & $x_{n1}$ & $x_{n2}$ & $z_{n1}$ & $z_{n2}$ & $d_n$ \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.25em}
+\emph{Notes:} “$*$” denotes item-missing $y_k$ due to item nonresponse.
+Here $\mathbf v_k=(z_{k1},z_{k2},x_{k1},x_{k2})^\top$.
+\end{center}
