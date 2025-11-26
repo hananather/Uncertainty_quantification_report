@@ -92,13 +92,56 @@
   isbn      = {9780471183860}
 }
 
-@article{haziza_2009_review,
-  author  = {Haziza, David},
-  title   = {Imputation and Inference in the Presence of Missing Data},
-  journal = {Handbook of Statistics, Vol. 29: Sample Surveys: Design, Methods and Applications},
-  year    = {2009},
-  pages   = {215--246},
-  publisher = {Elsevier}
+@book{cassel_sarndal_wretman_1977_foundations,
+  author    = {Cassel, Claes-Magnus and S{\"a}rndal, Carl-Erik and Wretman, Jan H.},
+  title     = {Foundations of Inference in Survey Sampling},
+  publisher = {Wiley},
+  address   = {New York},
+  year      = {1977}
+}
+
+@article{kalton_kasprzyk_1986_surveymeth,
+  author  = {Kalton, Graham and Kasprzyk, Daniel},
+  title   = {The Treatment of Missing Survey Data},
+  journal = {Survey Methodology},
+  year    = {1986},
+  volume  = {12},
+  number  = {1},
+  pages   = {1--16}
+}
+
+@incollection{oh_scheuren_1983_incomplete,
+  author    = {Oh, H. L. and Scheuren, F.},
+  title     = {Weighting Adjustments for Unit Nonresponse},
+  booktitle = {Incomplete Data in Sample Surveys, Volume 2: Theory and Bibliographies},
+  editor    = {Madow, William G. and Olkin, Ingram and Rubin, Donald B.},
+  publisher = {Academic Press},
+  address   = {New York},
+  year      = {1983},
+  pages     = {143--184}
+}
+
+@inproceedings{fay_1991_design_based,
+  author       = {Fay, Robert E.},
+  title        = {A Design-Based Perspective on Missing Data Variance},
+  booktitle    = {Proceedings of the 1991 Annual Research Conference},
+  organization = {U.S. Bureau of the Census},
+  address      = {Washington, DC},
+  year         = {1991},
+  pages        = {429--440}
+}
+
+@incollection{haziza_2009_review,
+  author    = {Haziza, David},
+  title     = {Imputation and Inference in the Presence of Missing Data},
+  booktitle = {Sample Surveys: Design, Methods and Applications},
+  editor    = {Pfeffermann, Danny and Rao, C. R.},
+  series    = {Handbook of Statistics},
+  volume    = {29A},
+  publisher = {Elsevier},
+  address   = {Amsterdam},
+  year      = {2009},
+  pages     = {215--246}
 }
 
 @article{kim_fuller_2004_biometrika,
@@ -133,14 +176,34 @@
   doi     = {10.1002/cjs.5550340112}
 }
 
-@article{kim_haziza_2014_sinica,
-  author  = {Kim, Jae Kwang and Haziza, David},
-  title   = {Doubly Robust Inference with Missing Data in Survey Sampling},
-  journal = {Statistica Sinica},
-  year    = {2014},
-  volume  = {24},
-  number  = {1},
-  pages   = {375--394}
+@article{wu_sitter_2001_jasa,
+  author  = {Wu, Changbao and Sitter, Randy R.},
+  title   = {A Model-Calibration Approach to Using Complete Auxiliary Information from Survey Data},
+  journal = {Journal of the American Statistical Association},
+  year    = {2001},
+  volume  = {96},
+  number  = {453},
+  pages   = {185--193}
+}
+
+@article{kang_schafer_2007_statsci,
+  author  = {Kang, Joseph D. Y. and Schafer, Joseph L.},
+  title   = {Demystifying Double Robustness: A Comparison of Alternative Strategies for Estimating a Population Mean from Incomplete Data},
+  journal = {Statistical Science},
+  year    = {2007},
+  volume  = {22},
+  number  = {4},
+  pages   = {523--539}
+}
+
+@article{breidt_opsomer_2017_statsci,
+  author  = {Breidt, F. Jay and Opsomer, Jean D.},
+  title   = {Model-Assisted Survey Estimation with Modern Prediction Techniques},
+  journal = {Statistical Science},
+  year    = {2017},
+  volume  = {32},
+  number  = {2},
+  pages   = {203--227}
 }
 
 @article{robins_rotnitzky_zhao_1994_jasa,
@@ -198,6 +261,16 @@
   doi     = {10.1080/01621459.2014.920256}
 }
 
+@article{kim_haziza_2014_sinica,
+  author  = {Kim, Jae Kwang and Haziza, David},
+  title   = {Doubly Robust Inference with Missing Data in Survey Sampling},
+  journal = {Statistica Sinica},
+  year    = {2014},
+  volume  = {24},
+  number  = {1},
+  pages   = {375--394}
+}
+
 @article{chen_haziza_2017_biometrika,
   author  = {Chen, Sixia and Haziza, David},
   title   = {Multiply Robust Imputation Procedures for the Treatment of Item Nonresponse in Surveys},
@@ -220,33 +293,32 @@
   url     = {https://www3.stat.sinica.edu.tw/statistica/oldpdf/A29n424.pdf}
 }
 
-
 @article{Haziza2017,
-  title={On the construction of imputation classes in surveys},
-  author={Haziza, David and Beaumont, Jean-Fran{\c{c}}ois},
-  journal={International Statistical Review},
-  volume={85},
-  number={1},
-  pages={25--56},
-  year={2017},
-  publisher={Wiley Online Library}
+  title     = {On the Construction of Imputation Classes in Surveys},
+  author    = {Haziza, David and Beaumont, Jean-Fran{\c{c}}ois},
+  journal   = {International Statistical Review},
+  volume    = {85},
+  number    = {1},
+  pages     = {25--56},
+  year      = {2017},
+  publisher = {Wiley Online Library}
 }
 
 @inproceedings{Chen2016,
-  title={XGBoost: A scalable tree boosting system},
-  author={Chen, Tianqi and Guestrin, Carlos},
-  booktitle={Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining},
-  pages={785--794},
-  year={2016},
-  organization={ACM}
+  title        = {XGBoost: A Scalable Tree Boosting System},
+  author       = {Chen, Tianqi and Guestrin, Carlos},
+  booktitle    = {Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining},
+  pages        = {785--794},
+  year         = {2016},
+  organization = {ACM}
 }
 
 @article{KimHaziza2014,
-  title={Doubly robust inference with missing data in survey sampling},
-  author={Kim, Jae Kwang and Haziza, David},
-  journal={Statistica Sinica},
-  volume={24},
-  number={1},
-  pages={375--394},
-  year={2014}
+  title   = {Doubly Robust Inference with Missing Data in Survey Sampling},
+  author  = {Kim, Jae Kwang and Haziza, David},
+  journal = {Statistica Sinica},
+  volume  = {24},
+  number  = {1},
+  pages   = {375--394},
+  year    = {2014}
 }

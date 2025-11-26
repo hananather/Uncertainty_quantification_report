@@ -439,6 +439,117 @@ where $\bar{\hat{\mu}}$ is the mean of the bootstrap replicates. This method is 
 
 
 \section{Simulation}
+
+
+\subsection{Bootstrap implementation for each estimator}
+
+For variance estimation and for computing coverage in the simulation study, we use a design based bootstrap. Let $S$ denote the original sample, with design weights $d_i = 1/\pi_i$, and let $S_r$ and $S_m$ denote the respondent and missing subsets. Let $U$ denote the finite population. Throughout the bootstrap the population $\{(y_i,\mathbf{x}_i,\mathbf{z}_i): i\in U\}$, the frame auxiliaries $\mathbf{z}_i$, and the historically trained prediction function $f_{\text{hist}}(\mathbf{z}_i)$ are treated as fixed and known.
+
+For $b = 1,\dots,B$ we draw a bootstrap sample $S^{(b)}$ from $S$ using a standard design based bootstrap (for example, the rescaling bootstrap for complex designs). The resulting rescaled weights are written $d_i^{(b)}$ for $i\in S^{(b)}$, and $S^{(b)}_r$ denotes the respondent set in the $b$th bootstrap sample. On each bootstrap sample we refit all models that, in practice, would be estimated from the realized sample, and then recompute the estimator of interest. The bootstrap variance for an estimator $\hat\mu$ is
+\[
+\widehat{\mathrm{Var}}_B(\hat\mu)
+  = \frac{1}{B-1}\sum_{b=1}^B\Bigl(\hat\mu^{(b)} - \bar\mu_B\Bigr)^2,
+\qquad
+\bar\mu_B = \frac{1}{B}\sum_{b=1}^B \hat\mu^{(b)}.
+\]
+Below we summarize, estimator by estimator, which components are re-estimated inside each bootstrap replicate, and which are held fixed.
+
+\paragraph{Naive Horvitz--Thompson (respondents only).}
+This estimator ignores nonresponse and auxiliary information. In each bootstrap sample $S^{(b)}$ we compute
+\[
+\hat\mu_{\text{naive}}^{(b)}
+  = \frac{1}{N}\sum_{i\in S_r^{(b)}} d_i^{(b)} y_i.
+\]
+No model is fitted in this case; only the design weights are rescaled by the bootstrap.
+
+\paragraph{Nonresponse weighting only (NWA / IPW).}
+This estimator uses only a propensity model for response. For each bootstrap sample $S^{(b)}$:
+\begin{enumerate}
+  \item Fit the parametric propensity model $\hat p_i^{(b)} = \Pr(r_i=1\mid \mathbf{v}_i)$ by logistic regression of $r_i$ on $\mathbf{v}_i = [\mathbf{z}_i,\mathbf{x}_i]$ using all units in $S^{(b)}$.
+  \item Compute the IPW estimator
+  \[
+  \hat\mu_{\text{NWA}}^{(b)}
+    = \frac{1}{N}\sum_{i\in S_r^{(b)}} \frac{d_i^{(b)}}{\hat p_i^{(b)}}\,y_i.
+  \]
+\end{enumerate}
+Thus the propensity model is re-estimated in every bootstrap replicate; the population and frame data remain fixed.
+
+\paragraph{Standard nonresponse GREG / Hist-GREG.}
+This estimator uses a regression of $y_i$ on the frame auxiliaries $\mathbf{z}_i$ together with a propensity model for response. For each bootstrap sample $S^{(b)}$:
+\begin{enumerate}
+  \item Fit the outcome model $\hat m_{S_r^{(b)}}(\mathbf{z}_i)$ on the respondents $S_r^{(b)}$ (for example, a linear or generalized linear regression of $y_i$ on $\mathbf{z}_i$).
+  \item Fit the propensity model $\hat p_i^{(b)} = \Pr(r_i=1\mid \mathbf{v}_i)$ on $S^{(b)}$ by logistic regression of $r_i$ on $\mathbf{v}_i = [\mathbf{z}_i,\mathbf{x}_i]$.
+  \item Evaluate $\hat m_{S_r^{(b)}}(\mathbf{z}_i)$ for all $i\in U$ using the frame data, and compute
+  \[
+  \hat\mu_{\text{GREG}}^{(b)}
+    = \frac{1}{N}\left(
+        \sum_{i\in U} \hat m_{S_r^{(b)}}(\mathbf{z}_i)
+        + \sum_{i\in S_r^{(b)}} \frac{d_i^{(b)}}{\hat p_i^{(b)}}
+          \bigl\{y_i - \hat m_{S_r^{(b)}}(\mathbf{z}_i)\bigr\}
+      \right).
+  \]
+\end{enumerate}
+Both the regression of $y$ on $\mathbf{z}$ and the response propensity model are refit in each bootstrap replicate; the frame $\{\mathbf{z}_i : i\in U\}$ is treated as fixed.
+
+\paragraph{Two-step mass imputation and Hist-PPD.}
+The mass imputation class uses a rich outcome model fitted on respondents to complete the sample, followed by a projection based on frame information. In the generic two-step projection estimator (Scenario~3) we have:
+\begin{enumerate}
+  \item Fit a rich imputation model $\hat m_{S_r^{(b)}}(\mathbf{v}_i)$ on $S_r^{(b)}$ and form completed outcomes
+  \[
+  y_i^{\star (b)} = r_i y_i + (1-r_i)\,\hat m_{S_r^{(b)}}(\mathbf{v}_i),
+  \qquad i\in S^{(b)}.
+  \]
+  \item Fit a coarser projection model $\hat m_{S^{(b)}}(\mathbf{z}_i)$ on the completed sample $\{(y_i^{\star (b)},\mathbf{z}_i): i\in S^{(b)}\}$.
+  \item Use the projection estimator
+  \[
+  \hat\mu_{2\text{step}}^{(b)}
+    = \frac{1}{N}\left(
+        \sum_{i\in U} \hat m_{S^{(b)}}(\mathbf{z}_i)
+        + \sum_{i\in S^{(b)}} d_i^{(b)}
+          \bigl\{y_i^{\star (b)} - \hat m_{S^{(b)}}(\mathbf{z}_i)\bigr\}
+      \right).
+  \]
+\end{enumerate}
+Both the rich imputation model and the projection model are re-estimated in every bootstrap replicate; the frame $\mathbf{z}_i$ is fixed.
+
+The Hist-PPD estimator (Scenario~4) is a special case where the projection term is supplied by the historical function $f_{\text{hist}}(\mathbf{z}_i)$. In each bootstrap replicate we still refit the rich imputation model $\hat m_{S_r^{(b)}}(\mathbf{v}_i)$ and form $y_i^{\star (b)}$ as above, but we treat $f_{\text{hist}}(\cdot)$ as fixed and compute
+\[
+\hat\mu_{\text{Hist-PPD}}^{(b)}
+  = \frac{1}{N}\left(
+      \sum_{i\in U} f_{\text{hist}}(\mathbf{z}_i)
+      + \sum_{i\in S^{(b)}} d_i^{(b)}
+        \bigl\{y_i^{\star (b)} - f_{\text{hist}}(\mathbf{z}_i)\bigr\}
+    \right).
+\]
+Thus, for Hist-PPD the only model that is re-estimated inside the bootstrap is the imputation model on the respondents; the historical anchor $f_{\text{hist}}$ is reused across all bootstrap replicates.
+
+\paragraph{Hist-PPD-DR (Scenario~5, proposed).}
+The doubly robust estimator combines the historical anchor, the mass imputation signal, and a propensity based bias correction. In each bootstrap sample $S^{(b)}$:
+\begin{enumerate}
+  \item Fit the rich imputation model $\hat m_{S_r^{(b)}}(\mathbf{v}_i)$ on $S_r^{(b)}$ and compute the predicted values
+  \[
+  \tilde y_i^{(b)} = \hat m_{S_r^{(b)}}(\mathbf{v}_i), \qquad i\in S^{(b)}.
+  \]
+  \item Fit the propensity model $\hat p_i^{(b)} = \Pr(r_i = 1 \mid \mathbf{v}_i)$ by logistic regression of $r_i$ on $\mathbf{v}_i$ using all units in $S^{(b)}$.
+  \item Evaluate $f_{\text{hist}}(\mathbf{z}_i)$ for all $i\in U$ (using the fixed historical model) and compute
+  \[
+  \hat{\mu}_{\text{Hist-PPD-DR}}^{(b)}
+    = \frac{1}{N}\left(
+        \sum_{i\in U} f_{\text{hist}}(\mathbf{z}_i)
+        + \sum_{i\in S^{(b)}} d_i^{(b)}
+          \bigl\{\tilde y_i^{(b)} - f_{\text{hist}}(\mathbf{z}_i)\bigr\}
+        + \sum_{i\in S_r^{(b)}} \frac{d_i^{(b)}}{\hat p_i^{(b)}}
+          \bigl\{y_i - \tilde y_i^{(b)}\bigr\}
+      \right),
+  \]
+  which is the bootstrap analogue of equation~\eqref{eq:Hist-PPD-DR}.
+\end{enumerate}
+In this case both working models are re-estimated for every bootstrap replicate: the outcome model used for mass imputation and the propensity model for response. The historical function $f_{\text{hist}}$ and the frame data remain fixed.
+
+This estimator by estimator description makes explicit which parts of each procedure are treated as random in the bootstrap. In particular, whenever an estimator would involve fitting a regression or propensity model in practice, that model is refit inside every bootstrap replicate; fixed frame information and historical models are not resampled.
+
+
+
 \todo[inline, color=orange]{NEED TO VALIDATE/VERIFY - THINK HARD ABOUT THIS!}
 
 To evaluate the finite-sample performance of the proposed estimation strategy, we conduct a comprehensive simulation study. We follow the standard evaluation framework for missing data estimators in survey sampling (e.g., Kim and Rao, 2012; Haziza and Beaumont, 2017). Our primary objective is to study and benchmark the estimators against each other under realistic conditions where historical administrative data is ubiquitous, but current sample data is subject to non-response.
