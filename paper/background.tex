@@ -1,4 +1,78 @@
 \section{Literature Review}
+% =========================================================
+% NEW SECTION: DATA DISTRIBUTION SHIFTS
+% =========================================================
+
+\section{Data Distribution Shifts}
+\label{sec:data_drift}
+
+In the context of integrating historical or frame data with current survey samples, the assumption that the training distribution (history) matches the target distribution (current period) is rarely satisfied. While \textit{data distribution shift} is often used as a blanket term, it comprises three distinct subtypes: \textit{Covariate Shift}, \textit{Label Shift}, and \textit{Concept Drift} \parencite{moreno_torres_2012}. To formally define these shifts, let $\mathcal{X}$ denote the input space and $\mathcal{Y}$ the output space. We view the data generation process as drawing samples from a joint distribution $P(\mathbf{x}, y)$. 
+
+Standard machine learning models estimate the conditional probability $P(y \mid \mathbf{x})$. The joint distribution can be decomposed in two ways, corresponding to different causal perspectives:
+\begin{equation}
+\label{eq:joint_decomp}
+P(\mathbf{x}, y) \;=\; 
+\underbrace{P(y \mid \mathbf{x})}_{\text{Mechanism}} \underbrace{P(\mathbf{x})}_{\text{Covariates}} 
+\;=\; 
+\underbrace{P(\mathbf{x} \mid y)}_{\text{Manifestation}} \underbrace{P(y)}_{\text{Prior}}.
+\end{equation}
+
+\noindent We categorize shifts based on which components of these decompositions change between the source (historical, $P_S$) and target (current, $P_T$) distributions.
+
+\paragraph{Covariate Shift.}
+Covariate shift occurs when the distribution of inputs changes, but the relationship between inputs and outputs remains fixed \parencite{shimodaira_2000_jspi}. Mathematically:
+\begin{equation}
+P_S(\mathbf{x}) \neq P_T(\mathbf{x}) \quad \text{but} \quad P_S(y \mid \mathbf{x}) = P_T(y \mid \mathbf{x}).
+\end{equation}
+This corresponds to a shift in the second term of the first decomposition in \eqref{eq:joint_decomp}. In survey sampling, this is analogous to a change in the auxiliary population structure (e.g., a demographic shift in $\mathbf{z}$) while the economic mechanism $y \mid \mathbf{x}$ remains stable.
+
+\paragraph{Label Shift.}
+Label shift, also referred to as \textit{prior probability shift}, occurs when the marginal distribution of the labels changes, but the class-conditional density remains invariant \parencite{lipton_2018_labelshift}.
+\begin{equation}
+P_S(y) \neq P_T(y) \quad \text{but} \quad P_S(\mathbf{x} \mid y) = P_T(\mathbf{x} \mid y).
+\end{equation}
+This aligns with the second decomposition in \eqref{eq:joint_decomp} and is common in "anti-causal" problems where the outcome causes the features (e.g., a disease $y$ causing symptoms $\mathbf{x}$). If an epidemic increases the prevalence $P(y)$, the observed feature distribution $P(\mathbf{x})$ shifts solely due to the change in $P(y)$.
+
+\paragraph{Concept Drift.}
+Concept drift (or \textit{posterior shift}) implies a fundamental change in the data-generating mechanism itself \parencite{gama_2014_surveydrift}:
+\begin{equation}
+P_S(y \mid \mathbf{x}) \neq P_T(y \mid \mathbf{x}) \quad \text{but} \quad P_S(\mathbf{x}) = P_T(\mathbf{x}).
+\end{equation}
+Here, the conditional distribution of the output changes for the same input. For example, the relationship between housing features $\mathbf{x}$ and price $y$ may fundamentally change after a macroeconomic shock (e.g., COVID-19), such that a model trained on $P_S$ yields biased predictions under $P_T$ even if the housing stock $\mathbf{x}$ remains constant.
+
+\subsection{Detection of Distribution Shifts}
+Detecting shift requires comparing the source and target distributions using statistical hypothesis testing. While simple summary statistics (e.g., drift in mean or variance) provide heuristics, rigorous detection utilizes two-sample tests.
+
+\paragraph{Univariate Testing.}
+For one-dimensional data (e.g., scalar predictions or labels), the \textbf{Kolmogorov-Smirnov (KS) Test} is a standard non-parametric method \parencite{massey_1951_kstest}. It quantifies the distance between the empirical cumulative distribution functions (ECDF) of the source and target data. The null hypothesis $H_0: P_S = P_T$ is rejected if the KS statistic exceeds a critical threshold derived from the reference distribution.
+
+\paragraph{Multivariate Testing.}
+For high-dimensional vectors $\mathbf{x}$, the KS test is inapplicable. Instead, we employ kernel-based measures such as the \textbf{Maximum Mean Discrepancy (MMD)} \parencite{gretton_2012_jmlr}. MMD maps distributions to a Reproducing Kernel Hilbert Space (RKHS) $\mathcal{H}$ via a feature map $\phi(\cdot)$. The squared MMD distance is defined as:
+\begin{equation}
+\text{MMD}^2(P_S, P_T) \;=\; \left\| \mathbb{E}_{\mathbf{x} \sim P_S}[\phi(\mathbf{x})] - \mathbb{E}_{\mathbf{x} \sim P_T}[\phi(\mathbf{x})] \right\|_{\mathcal{H}}^2.
+\end{equation}
+An alternative approach is \textbf{Least Squares Density Difference (LSDD)} \parencite{sugiyama_2013_density}, which directly estimates the density difference function without estimating the densities themselves. To improve test power, dimensionality reduction is often recommended prior to applying these two-sample tests.
+
+\subsection{Addressing Distribution Shifts}
+Strategies to mitigate distribution shift generally fall into three categories:
+
+\paragraph{1. Importance Weighting (for Covariate Shift).}
+If the shift is strictly covariate ($P_S(y|\mathbf{x}) = P_T(y|\mathbf{x})$), one can correct the bias by re-weighting the training samples. The optimal weights correspond to the density ratio \parencite{shimodaira_2000_jspi}:
+\begin{equation}
+w(\mathbf{x}) \;=\; \frac{P_T(\mathbf{x})}{P_S(\mathbf{x})}.
+\end{equation}
+The model is then trained by minimizing the weighted loss $\sum_i w(\mathbf{x}_i) \ell(f(\mathbf{x}_i), y_i)$, effectively forcing the training distribution to mimic the target distribution.
+
+\paragraph{2. Invariant Representation Learning.}
+Rather than re-weighting, this class of methods seeks a feature transformation $\Phi(\mathbf{x})$ such that the distribution of mapped features is invariant across domains. \textcite{zhang_2013_icml} proposed using causal interpretations with kernel embeddings to correct for both target (label) and conditional shifts without requiring target labels. Similarly, \textcite{zhou_2021_domaininv} proposed \textit{domain-invariant representation learning}, an unsupervised adaptation technique that learns representations invariant to density transformations between domains. While theoretically powerful, these methods assume that a shared invariant structure exists and often require complex adversarial training procedures.
+
+\paragraph{3. Transfer Learning and Fine-tuning.}
+The standard industrial approach treats the shift as a Transfer Learning problem \parencite{pan_yang_2010_transfer}. Here, the parameters $\theta_S$ learned on the source distribution $P_S$ serve as the initialization for a model on $P_T$. The model is then \textit{fine-tuned} (retrained) using a small labeled sample from the target distribution. This effectively combines the general features learned from the massive source dataset with the specific mechanism of the target domain.
+
+\medskip
+\noindent In the context of our proposed \textbf{Hist-PPD-DR estimator} (Scenario 5), we effectively adopt a hybrid of these approaches: the historical model $f_{\text{hist}}$ acts as a transferred base learner (Approach 3), while the mass-imputation term $\sum (\tilde{y}_i - f_{\text{hist}})$ explicitly corrects for Concept Drift, and the propensity weights $1/\hat{p}_i$ perform a finite-population analogue of Importance Weighting (Approach 1) to handle the item nonresponse bias.
+
+
 \section{Prediction-Powered Inference (PPI): Notes}
 
 \begin{algorithm}[H]

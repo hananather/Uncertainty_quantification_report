@@ -105,7 +105,7 @@ This estimator is consistent if \textit{either} the imputation model $\hat{m}_{S
 % ------------------------------------------------- %
 % ------------------ SCENARIO 2 ------------------- %
 % ------------------------------------------------- %
-\paragraph{Scenario 2: Item Nonresponse with Population Auxiliary Data.}
+\paragraph{Scenario 2A: Item Nonresponse with Population Auxiliary Data.}
 
 We now extend the setting to assume access to a vector of auxiliary variables $\mathbf{z}_i$ for every unit in the population $U$ (e.g., census data), in addition to sample-specific information $\mathbf{x}_i$. 
 
@@ -147,6 +147,102 @@ Consequently, the richer sample-only auxiliaries $\mathbf{x}_i$ do not enter the
 \end{itemize}
 
 The next scenario addresses how to integrate these two data sources effectively to leverage the predictive power of $\mathbf{x}_i$ for population inference.
+
+
+
+\paragraph{Scenario 2B: Enhanced GREG with Historical Predictions (Model Calibration).}
+We can refine the standard NR-GREG by explicitly incorporating the historical outcome $y_i^{(t-1)}$ (or a model prediction based on it) as the primary auxiliary variable. In many practical settings, the raw frame variables $\mathbf{z}_i$ (e.g., age, region) are less predictive of the current outcome $y_i$ than the unit's own historical value.
+
+However, directly adding a historical prediction $\hat{y}_i = f_{\text{hist}}(\mathbf{z}_i)$ to the linear design matrix of the standard GREG can lead to multicollinearity and unstable weights if not handled correctly \parencite{beaumont_bocci_2008_penalized}. To leverage this powerful signal robustly, we adopt the \textbf{Model Calibration} framework proposed by \textcite{wu_sitter_2001_jasa}.
+
+Instead of calibrating on the raw vector $\mathbf{z}_i$, we construct a parsimonious auxiliary vector $\mathbf{u}_i$ derived from the historical model:
+\[
+\mathbf{u}_i = \begin{bmatrix} 1 \\ f_{\text{hist}}(\mathbf{z}_i) \end{bmatrix}.
+\]
+Here, $f_{\text{hist}}(\cdot)$ can be any complex, non-linear function (e.g., Random Forest, XGBoost, or a previous census value) trained on historical data. We then apply the GREG calibration constraints to this transformed vector $\mathbf{u}_i$. The resulting \textbf{Model-Calibrated GREG estimator} is:
+
+\begin{equation} \label{eq:s2b_model_cal}
+\hat{\mu}_{\text{MC-GREG}}
+  = \frac{1}{N}\left(
+      \sum_{i\in U} \mathbf{u}_i^\top \hat{\boldsymbol{\beta}}_{S_r}
+      + \sum_{i\in S}
+          \frac{r_i}{\hat{p}_i \pi_i} (y_i - \mathbf{u}_i^\top \hat{\boldsymbol{\beta}}_{S_r})
+    \right),
+\end{equation}
+
+\noindent where $\hat{\boldsymbol{\beta}}_{S_r}$ is the weighted least squares regression coefficient of $y_i$ on $\mathbf{u}_i$ computed over the respondents.
+
+\medskip
+\noindent\textbf{Advantages over Standard GREG:}
+\begin{enumerate}
+    \item \textbf{Dimensionality Reduction:} By compressing the information from a high-dimensional $\mathbf{z}_i$ into a single scalar predictor $f_{\text{hist}}(\mathbf{z}_i)$, we avoid the curse of dimensionality and ensuring the calibration weights remain strictly positive and stable \parencite{beaumont_bocci_2008_penalized}.
+    \item \textbf{Capturing Non-Linearity:} The standard GREG (Equation \ref{eq:s2_greg}) assumes a linear relationship between $y$ and $\mathbf{z}$. Model Calibration allows $f_{\text{hist}}$ to capture complex non-linear structures (e.g., interactions in the history) while retaining the familiar design-consistent GREG form \parencite{wu_sitter_2001_jasa, breidt_opsomer_2017_statsci}.
+    \item \textbf{Handling Generated Regressors:} By explicitly defining the auxiliary vector as the output of a model, this framework naturally accommodates the "generated regressor" nature of historical predictions, provided the model $f_{\text{hist}}$ is fixed or external to the current sample \parencite{pagan_1984_econometrics}.
+\end{enumerate}
+
+This scenario effectively bridges the gap between classical design-based estimation and modern machine learning, serving as a direct precursor to the Hist-PPD framework.
+
+\paragraph{Scenario 2C: Augmented GREG (Feature Concatenation).}
+
+While Scenario 2B \textit{replaces} the frame variables with a model prediction to achieve parsimony, an alternative strategy—often termed "Augmented GREG"—is to \textit{append} the historical prediction to the existing frame variables. This approach attempts to enforce consistency with known population totals for $\mathbf{z}_i$ while simultaneously leveraging the non-linear signal from the historical model.
+
+\medskip
+\noindent\textbf{Formulation.}
+We define the augmented auxiliary vector $\mathbf{u}_i^+$ by concatenating the raw frame data and the historical prediction:
+\[
+\mathbf{u}_i^+ = \begin{bmatrix} \mathbf{z}_i \\ f_{\text{hist}}(\mathbf{z}_i) \end{bmatrix}.
+\]
+Crucially, unlike mass imputation approaches that rely on sample-only data $\mathbf{x}_i$, this prediction must rely strictly on frame variables $\mathbf{z}_i$ to ensuring that the population total $\mathbf{T}_{\mathbf{u}^+} = \sum_{U} \mathbf{u}_i^+$ is computable.
+
+The estimator follows the standard calibration form using this augmented vector:
+\begin{equation} \label{eq:s2c_aug_greg}
+\hat{\mu}_{\text{Aug-GREG}}
+  = \frac{1}{N}\left(
+      \sum_{i\in U} \mathbf{u}_i^{+\top} \hat{\boldsymbol{\beta}}^+_{S_r}
+      + \sum_{i\in S}
+          \frac{r_i}{\hat{p}_i \pi_i} (y_i - \mathbf{u}_i^{+\top} \hat{\boldsymbol{\beta}}^+_{S_r})
+    \right).
+\end{equation}
+
+\medskip
+
+This scenario presents a trade-off relative to Model Calibration (Scenario 2B):
+\begin{enumerate}
+    \item \textbf{Robustness to Model Misspecification:} By retaining $\mathbf{z}_i$ in the calibration vector, Scenario 2C ensures that the estimator reproduces known population totals for demographics or administrative variables, even if the historical model $f_{\text{hist}}$ is severely biased or "drifted".
+    \item \textbf{Risk of Multicollinearity:} If $f_{\text{hist}}$ is approximately linear in $\mathbf{z}_i$, the augmented vector $\mathbf{u}_i^+$ will be collinear, leading to a singular design matrix. In such cases, standard GREG fails, and \textbf{Ridge Calibration} or \textbf{Penalized GREG} must be employed to stabilize the weights.
+\end{enumerate}
+
+
+
+
+\paragraph{Scenario 2D: The Historical GREG.}
+
+A robust refinement of the standard GREG is to restrict the auxiliary vector strictly to the single predicted value derived from history. While one might intuitively consider "augmenting" the design matrix by appending the historical prediction to the raw frame variables $\mathbf{z}_i$, this practice is discouraged in the literature due to the high risk of multicollinearity and unstable weight generation \parencite{beaumont_bocci_2008_penalized}.
+
+Instead, we adopt the \textbf{Model Calibration} framework \parencite{wu_sitter_2001_jasa}, which treats the historical model $f_{\text{hist}}(\mathbf{z}_i)$ as a sufficient summary statistic for the frame information. By compressing the high-dimensional frame vector $\mathbf{z}_i$ into a single scalar predictor, we minimize the degrees of freedom used in the calibration step, thereby maximizing the stability of the estimator.
+
+\medskip
+\noindent\textbf{Formulation.}
+We define the auxiliary vector $\mathbf{u}_i$ as a vector of dimension $p=2$, containing only the intercept and the historical prediction:
+\[
+\mathbf{u}_i = \begin{bmatrix} 1 \\ f_{\text{hist}}(\mathbf{z}_i) \end{bmatrix}.
+\]
+The resulting estimator corresponds to a regression estimator where the current outcome $y_i$ is regressed solely on the historical prediction $\hat{y}_i^{\text{hist}} = f_{\text{hist}}(\mathbf{z}_i)$:
+
+\begin{equation} \label{eq:s2b_pure_cal}
+\hat{\mu}_{\text{MC}} = \frac{1}{N} \left( \sum_{i \in U} \hat{y}_i^{\text{hist}} + \hat{\beta}_{1} \sum_{i \in S} d_i \left( y_i - \hat{y}_i^{\text{hist}} \right) \right)
+\end{equation}
+
+\noindent where $\hat{\beta}_1$ is the estimated slope coefficient from the weighted regression of $y$ on $\hat{y}^{\text{hist}}$.
+
+\medskip
+\noindent\textbf{Theoretical Justification:}
+This parsimonious specification offers three distinct advantages over high-dimensional augmentation:
+\begin{enumerate}
+    \item \textbf{Statistical Efficiency:} \textcite{wu_sitter_2001_jasa} demonstrate that if the historical model $f_{\text{hist}}$ is reasonably accurate, this estimator is asymptotically optimal. Re-introducing the raw components of $\mathbf{z}_i$ into the calibration constraints typically adds noise without contributing additional signal, leading to variance inflation.
+    \item \textbf{Weight Stability:} By estimating only a single slope parameter, the calibration weights are highly stable. The risk of generating negative weights—a common pathology in standard GREG when $p_z$ is large—is virtually eliminated, provided the correlation between past and present outcomes remains positive \parencite{beaumont_bocci_2008_penalized}.
+    \item \textbf{Drift Correction:} The coefficient $\hat{\beta}_1$ acts as an interpretable "drift parameter." If $\hat{\beta}_1 \approx 1$, the historical model remains an accurate proxy for the current period. A deviation ($\hat{\beta}_1 \neq 1$) explicitly corrects for systematic scale shifts (e.g., inflation or population growth) that have occurred since time $t-1$.
+\end{enumerate}
 
 % ------------------------------------------------- %
 % ------------------ SCENARIO 3 ------------------- %
@@ -353,6 +449,35 @@ Population ($U$) &
 \end{tabular}%
 }
 \end{table}
+
+% ------------------------------------------------- %
+% ----------- METHODOLOGICAL FRAMEWORK ------------ %
+% ------------------------------------------------- %
+\section{Model Calibration with Historical Priors}
+\label{sec:model_calibration_framework}
+
+The central innovation in our proposal is the rigorous integration of historical outcomes, $y_i^{(t-1)}$, into the current estimation framework. Rather than treating historical predictions merely as additional covariates in a linear regression—which can lead to unstable weights and multicollinearity—we adopt a \textbf{Model Calibration} approach \parencite{wu_sitter_2001_jasa}. This framework provides a set of best practices for "modifying" the standard GREG estimator to robustly incorporate complex historical signals.
+
+\subsection{Dimensionality Reduction and Stability}
+The core principle of Model Calibration is to replace high-dimensional auxiliary vectors with a parsimonious predicted value. We define the historical signal not as a raw collection of frame variables $\mathbf{z}_i$, but as a single, high-quality prediction scalar:
+\[ 
+\hat{y}_i^{\text{hist}} = f_{\text{hist}}(\mathbf{z}_i).
+\]
+By calibrating on this scalar (or using it as the projection term in the difference estimator), we effectively reduce the dimensionality of the estimation problem from $p_z$ (the number of frame variables) to $1$. This "best practice" ensures that the resulting weights are well-conditioned and stable, even when the underlying historical model $f_{\text{hist}}$ is complex (e.g., a non-linear machine learning model) or highly correlated with current sample data \parencite{beaumont_bocci_2008_penalized}.
+
+\subsection{Decoupling Prediction from Correction}
+The \textbf{Hist-PPD} estimator (Scenario 4) realizes this best practice by structurally decoupling the \textit{historical anchor} from the \textit{current correction}:
+\begin{itemize}
+    \item \textbf{The Anchor (Variance Reduction):} We utilize the population sum $\sum_{i \in U} f_{\text{hist}}(\mathbf{z}_i)$ as the primary estimator. Because this term is based on the entire population, it has zero sampling variance.
+    \item \textbf{The Correction (Bias Reduction):} We use the current sample strictly to estimate the \textit{residual} $(y_i - f_{\text{hist}}(\mathbf{z}_i))$.
+\end{itemize}
+This separation allows us to "borrow strength" from the historical model to reduce variance, while relying on the rich current auxiliaries $\mathbf{x}_i$ solely to correct for concept drift and nonresponse bias.
+
+\subsection{Valid Inference with Generated Regressors}
+A critical advantage of this framework is its statistical validity. Treating the historical prediction as a projection term explicitly acknowledges that $\hat{y}_i^{\text{hist}}$ is a "generated regressor" \parencite{pagan_1984_econometrics}. By embedding this generated variable into the projection architecture—rather than fixing it as a covariate—we facilitate valid variance estimation. The bootstrap procedure described in Section \ref{sec:variance_estimation} naturally captures the uncertainty associated with the historical model, ensuring that our confidence intervals remain honest and have correct coverage \parencite{cbs_2025_measurement}.
+
+
+
 
 
 % ------------------------------------------------- %
