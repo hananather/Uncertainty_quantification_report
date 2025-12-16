@@ -49,7 +49,7 @@ We define the population, sampling design, and missing data mechanisms as follow
     \[
     \Pr(r_i=1 \mid y_i,\mathbf{v}_i) \;=\; \Pr(r_i=1 \mid \mathbf{v}_i).
     \]
-    We denote the response propensity as $\rho_i(\mathbf{v}_i) := \Pr(r_i=1\mid \mathbf{v}_i)$.
+    We denote the response propensity as $p_i(\mathbf{v}_i) := \Pr(r_i=1\mid \mathbf{v}_i)$.
     
     \item[Sets and counts:] We partition the sample $S$ into respondents $S_r$ and non-respondents $S_m$:
     \[ 
@@ -115,8 +115,8 @@ This distinction is critical: $\mathbf{z}_i$ allows for population-level project
 \hat{\mu}_{\text{NR-GREG}}
   = \frac{1}{N}\left(
       \sum_{i\in U} \hat{m}_{S_{r}}(\mathbf{z}_i)
-      + \sum_{i\in S}
-          \frac{r_i}{\hat{p}_i \pi_i} (y_i - \hat{m}_{S_{r}}(\mathbf{z}_i))
+            + \sum_{i\in S_r}
+          \frac{1}{\hat{p}_i \pi_i} (y_i - \hat{m}_{S_r}(\mathbf{z}_i))
     \right),
 \end{equation}
 
@@ -148,101 +148,60 @@ Consequently, the richer sample-only auxiliaries $\mathbf{x}_i$ do not enter the
 
 The next scenario addresses how to integrate these two data sources effectively to leverage the predictive power of $\mathbf{x}_i$ for population inference.
 
+\paragraph{Scenario 2B: GREG$_{\hat y}$ with a Pre-trained Historical Prediction.}
 
-
-\paragraph{Scenario 2B: Enhanced GREG with Historical Predictions (Model Calibration).}
-We can refine the standard NR-GREG by explicitly incorporating the historical outcome $y_i^{(t-1)}$ (or a model prediction based on it) as the primary auxiliary variable. In many practical settings, the raw frame variables $\mathbf{z}_i$ (e.g., age, region) are less predictive of the current outcome $y_i$ than the unit's own historical value.
-
-However, directly adding a historical prediction $\hat{y}_i = f_{\text{hist}}(\mathbf{z}_i)$ to the linear design matrix of the standard GREG can lead to multicollinearity and unstable weights if not handled correctly \parencite{beaumont_bocci_2008_penalized}. To leverage this powerful signal robustly, we adopt the \textbf{Model Calibration} framework proposed by \textcite{wu_sitter_2001_jasa}.
-
-Instead of calibrating on the raw vector $\mathbf{z}_i$, we construct a parsimonious auxiliary vector $\mathbf{u}_i$ derived from the historical model:
+Assume a pre-trained (historical) prediction function $f_{\text{hist}}$ is available and
+produces a scalar prediction for every unit in the population:
 \[
-\mathbf{u}_i = \begin{bmatrix} 1 \\ f_{\text{hist}}(\mathbf{z}_i) \end{bmatrix}.
+\hat y_i^{\text{hist}} := f_{\text{hist}}(\mathbf z_i), \qquad i\in U.
 \]
-Here, $f_{\text{hist}}(\cdot)$ can be any complex, non-linear function (e.g., Random Forest, XGBoost, or a previous census value) trained on historical data. We then apply the GREG calibration constraints to this transformed vector $\mathbf{u}_i$. The resulting \textbf{Model-Calibrated GREG estimator} is:
-
-\begin{equation} \label{eq:s2b_model_cal}
-\hat{\mu}_{\text{MC-GREG}}
-  = \frac{1}{N}\left(
-      \sum_{i\in U} \mathbf{u}_i^\top \hat{\boldsymbol{\beta}}_{S_r}
-      + \sum_{i\in S}
-          \frac{r_i}{\hat{p}_i \pi_i} (y_i - \mathbf{u}_i^\top \hat{\boldsymbol{\beta}}_{S_r})
-    \right),
-\end{equation}
-
-\noindent where $\hat{\boldsymbol{\beta}}_{S_r}$ is the weighted least squares regression coefficient of $y_i$ on $\mathbf{u}_i$ computed over the respondents.
-
-\medskip
-\noindent\textbf{Advantages over Standard GREG:}
-\begin{enumerate}
-    \item \textbf{Dimensionality Reduction:} By compressing the information from a high-dimensional $\mathbf{z}_i$ into a single scalar predictor $f_{\text{hist}}(\mathbf{z}_i)$, we avoid the curse of dimensionality and ensuring the calibration weights remain strictly positive and stable \parencite{beaumont_bocci_2008_penalized}.
-    \item \textbf{Capturing Non-Linearity:} The standard GREG (Equation \ref{eq:s2_greg}) assumes a linear relationship between $y$ and $\mathbf{z}$. Model Calibration allows $f_{\text{hist}}$ to capture complex non-linear structures (e.g., interactions in the history) while retaining the familiar design-consistent GREG form \parencite{wu_sitter_2001_jasa, breidt_opsomer_2017_statsci}.
-    \item \textbf{Handling Generated Regressors:} By explicitly defining the auxiliary vector as the output of a model, this framework naturally accommodates the "generated regressor" nature of historical predictions, provided the model $f_{\text{hist}}$ is fixed or external to the current sample \parencite{pagan_1984_econometrics}.
-\end{enumerate}
-
-This scenario effectively bridges the gap between classical design-based estimation and modern machine learning, serving as a direct precursor to the Hist-PPD framework.
-
-\paragraph{Scenario 2C: Augmented GREG (Feature Concatenation).}
-
-While Scenario 2B \textit{replaces} the frame variables with a model prediction to achieve parsimony, an alternative strategy—often termed "Augmented GREG"—is to \textit{append} the historical prediction to the existing frame variables. This approach attempts to enforce consistency with known population totals for $\mathbf{z}_i$ while simultaneously leveraging the non-linear signal from the historical model.
-
-\medskip
-\noindent\textbf{Formulation.}
-We define the augmented auxiliary vector $\mathbf{u}_i^+$ by concatenating the raw frame data and the historical prediction:
+Define the (low-dimensional) calibration vector
 \[
-\mathbf{u}_i^+ = \begin{bmatrix} \mathbf{z}_i \\ f_{\text{hist}}(\mathbf{z}_i) \end{bmatrix}.
+\mathbf u_i := \begin{bmatrix} 1 \\ \hat y_i^{\text{hist}} \end{bmatrix}.
 \]
-Crucially, unlike mass imputation approaches that rely on sample-only data $\mathbf{x}_i$, this prediction must rely strictly on frame variables $\mathbf{z}_i$ to ensuring that the population total $\mathbf{T}_{\mathbf{u}^+} = \sum_{U} \mathbf{u}_i^+$ is computable.
+Let $\hat m(\hat y) := \hat\beta_0 + \hat\beta_1 \hat y$ denote the linear working model
+for regressing the current outcome on the historical prediction.
 
-The estimator follows the standard calibration form using this augmented vector:
-\begin{equation} \label{eq:s2c_aug_greg}
-\hat{\mu}_{\text{Aug-GREG}}
-  = \frac{1}{N}\left(
-      \sum_{i\in U} \mathbf{u}_i^{+\top} \hat{\boldsymbol{\beta}}^+_{S_r}
-      + \sum_{i\in S}
-          \frac{r_i}{\hat{p}_i \pi_i} (y_i - \mathbf{u}_i^{+\top} \hat{\boldsymbol{\beta}}^+_{S_r})
-    \right).
+\medskip
+\noindent\textbf{Complete-response version (no item nonresponse).}
+If $y_i$ is observed for all $i\in S$, the GREG$_{\hat y}$ estimator is
+\begin{equation}\label{eq:s2_greg_yhat_complete}
+\hat\mu_{\mathrm{GREG}_{\hat y}}
+=
+\frac{1}{N}\left(
+\sum_{i\in U} \hat m(\hat y_i^{\text{hist}})
++
+\sum_{i\in S}\frac{1}{\pi_i}\Bigl(y_i-\hat m(\hat y_i^{\text{hist}})\Bigr)
+\right),
 \end{equation}
+where $\hat m(\cdot)$ is fit on the sample via weighted least squares of $y_i$ on
+$\mathbf u_i$ using design weights $d_i=1/\pi_i$.
 
 \medskip
-
-This scenario presents a trade-off relative to Model Calibration (Scenario 2B):
-\begin{enumerate}
-    \item \textbf{Robustness to Model Misspecification:} By retaining $\mathbf{z}_i$ in the calibration vector, Scenario 2C ensures that the estimator reproduces known population totals for demographics or administrative variables, even if the historical model $f_{\text{hist}}$ is severely biased or "drifted".
-    \item \textbf{Risk of Multicollinearity:} If $f_{\text{hist}}$ is approximately linear in $\mathbf{z}_i$, the augmented vector $\mathbf{u}_i^+$ will be collinear, leading to a singular design matrix. In such cases, standard GREG fails, and \textbf{Ridge Calibration} or \textbf{Penalized GREG} must be employed to stabilize the weights.
-\end{enumerate}
-
-
-
-
-\paragraph{Scenario 2D: The Historical GREG.}
-
-A robust refinement of the standard GREG is to restrict the auxiliary vector strictly to the single predicted value derived from history. While one might intuitively consider "augmenting" the design matrix by appending the historical prediction to the raw frame variables $\mathbf{z}_i$, this practice is discouraged in the literature due to the high risk of multicollinearity and unstable weight generation \parencite{beaumont_bocci_2008_penalized}.
-
-Instead, we adopt the \textbf{Model Calibration} framework \parencite{wu_sitter_2001_jasa}, which treats the historical model $f_{\text{hist}}(\mathbf{z}_i)$ as a sufficient summary statistic for the frame information. By compressing the high-dimensional frame vector $\mathbf{z}_i$ into a single scalar predictor, we minimize the degrees of freedom used in the calibration step, thereby maximizing the stability of the estimator.
-
-\medskip
-\noindent\textbf{Formulation.}
-We define the auxiliary vector $\mathbf{u}_i$ as a vector of dimension $p=2$, containing only the intercept and the historical prediction:
-\[
-\mathbf{u}_i = \begin{bmatrix} 1 \\ f_{\text{hist}}(\mathbf{z}_i) \end{bmatrix}.
-\]
-The resulting estimator corresponds to a regression estimator where the current outcome $y_i$ is regressed solely on the historical prediction $\hat{y}_i^{\text{hist}} = f_{\text{hist}}(\mathbf{z}_i)$:
-
-\begin{equation} \label{eq:s2b_pure_cal}
-\hat{\mu}_{\text{MC}} = \frac{1}{N} \left( \sum_{i \in U} \hat{y}_i^{\text{hist}} + \hat{\beta}_{1} \sum_{i \in S} d_i \left( y_i - \hat{y}_i^{\text{hist}} \right) \right)
+\noindent\textbf{Item-nonresponse version (NR-GREG$_{\hat y}$).}
+When $y_i$ is observed only for respondents ($r_i=1$), we use the standard
+nonresponse GREG form with a response propensity model $\hat p_i$:
+\begin{equation}\label{eq:s2_greg_yhat_nr}
+\hat\mu_{\mathrm{NR\text{-}GREG}_{\hat y}}
+=
+\frac{1}{N}\left(
+\sum_{i\in U} \hat m(\hat y_i^{\text{hist}})
++ \sum_{i\in S_r} \frac{1}{\pi_i \hat p_i}\Bigl(y_i-\hat m(\hat y_i^{\text{hist}})\Bigr)
+\right).
 \end{equation}
-
-\noindent where $\hat{\beta}_1$ is the estimated slope coefficient from the weighted regression of $y$ on $\hat{y}^{\text{hist}}$.
+Here $\hat p_i \approx \Pr(r_i=1\mid \mathbf v_i)$ can depend on the full sample
+auxiliaries $\mathbf v_i=[\mathbf z_i,\mathbf x_i]$, while the outcome regression
+$\hat m(\hat y)$ uses only $\hat y_i^{\text{hist}}$ so that the population total
+$\sum_{i\in U}\hat m(\hat y_i^{\text{hist}})$ is computable.
 
 \medskip
-\noindent\textbf{Theoretical Justification:}
-This parsimonious specification offers three distinct advantages over high-dimensional augmentation:
-\begin{enumerate}
-    \item \textbf{Statistical Efficiency:} \textcite{wu_sitter_2001_jasa} demonstrate that if the historical model $f_{\text{hist}}$ is reasonably accurate, this estimator is asymptotically optimal. Re-introducing the raw components of $\mathbf{z}_i$ into the calibration constraints typically adds noise without contributing additional signal, leading to variance inflation.
-    \item \textbf{Weight Stability:} By estimating only a single slope parameter, the calibration weights are highly stable. The risk of generating negative weights—a common pathology in standard GREG when $p_z$ is large—is virtually eliminated, provided the correlation between past and present outcomes remains positive \parencite{beaumont_bocci_2008_penalized}.
-    \item \textbf{Drift Correction:} The coefficient $\hat{\beta}_1$ acts as an interpretable "drift parameter." If $\hat{\beta}_1 \approx 1$, the historical model remains an accurate proxy for the current period. A deviation ($\hat{\beta}_1 \neq 1$) explicitly corrects for systematic scale shifts (e.g., inflation or population growth) that have occurred since time $t-1$.
-\end{enumerate}
+\noindent\textbf{Connection to difference estimation (PPD / historical anchor).}
+Equation~\eqref{eq:s2_greg_yhat_complete} reduces to the prediction-powered difference
+estimator when $\hat m(\hat y)=\hat y$ (i.e., $\hat\beta_0=0,\ \hat\beta_1=1$).
+Thus GREG$_{\hat y}$ can be interpreted as a \emph{linear re-calibration} of the
+historical prediction that corrects for simple drift via an intercept and slope.
+
+
 
 % ------------------------------------------------- %
 % ------------------ SCENARIO 3 ------------------- %
@@ -305,7 +264,7 @@ To reduce the variance of the difference estimator, one might employ a model $f_
 \hat{\mu}_{\text{Pre-train}}
 = \frac{1}{N} \left(
   \sum_{i \in U} f_{\text{hist}}(\mathbf{z}_i)
-  + \sum_{i \in S} \frac{r_i\bigl(y_i - f_{\text{hist}}(\mathbf{z}_i)\bigr)}{\pi_i}
+   + \sum_{i \in S_r} \frac{y_i - f_{\text{hist}}(\mathbf{z}_i)}{\pi_i}
 \right)
 \end{equation}
 \noindent\textit{Critique:} While this method leverages the frame to stabilize the projection term (the first summand), the bias correction (the second summand) is still restricted to the respondent set $S_r$. If the relationship between $y_i$ and $\mathbf{z}_i$ has drifted due to factors associated with $\mathbf{x}_i$, and response depends on $\mathbf{x}_i$, the residual term computed over $S_r$ will be a biased estimate of the true population residual.
@@ -349,7 +308,7 @@ Let $\tilde{y}_i = \hat{m}_{S_r}(\mathbf{v}_i)$ be the predicted value from the 
     \;+\; 
     \sum_{i\in S} \frac{1}{\pi_i} \Bigl\{\tilde{y}_i - f_{\text{hist}}(\mathbf{z}_i)\Bigr\}
     \;+\; 
-    \sum_{i\in S} \frac{r_i}{\pi_i \hat{p}_i}\,\Bigl(y_i - \tilde{y}_i\Bigr)
+        \sum_{i\in S_r} \frac{1}{\pi_i \hat{p}_i}\,\Bigl(y_i - \tilde{y}_i\Bigr)
 \right)
 \end{equation}
 
@@ -456,25 +415,69 @@ Population ($U$) &
 \section{Model Calibration with Historical Priors}
 \label{sec:model_calibration_framework}
 
-The central innovation in our proposal is the rigorous integration of historical outcomes, $y_i^{(t-1)}$, into the current estimation framework. Rather than treating historical predictions merely as additional covariates in a linear regression—which can lead to unstable weights and multicollinearity—we adopt a \textbf{Model Calibration} approach \parencite{wu_sitter_2001_jasa}. This framework provides a set of best practices for "modifying" the standard GREG estimator to robustly incorporate complex historical signals.
+We incorporate historical outcomes $y_i^{(t-1)}$ through a prediction function
+$f_{\text{hist}}(\mathbf{z}_i)$ trained on administrative/historical data. Rather than adding
+these historical predictions and all frame variables $\mathbf{z}_i$ directly as
+covariates in a large regression, which can lead to unstable weights and
+multicollinearity, we follow the model-calibration approach of
+\textcite{wu_sitter_2001_jasa}. In this framework, $f_{\text{hist}}(\mathbf{z}_i)$
+is used as a single calibration / projection variable that summarizes the
+historical information.
+
 
 \subsection{Dimensionality Reduction and Stability}
-The core principle of Model Calibration is to replace high-dimensional auxiliary vectors with a parsimonious predicted value. We define the historical signal not as a raw collection of frame variables $\mathbf{z}_i$, but as a single, high-quality prediction scalar:
-\[ 
-\hat{y}_i^{\text{hist}} = f_{\text{hist}}(\mathbf{z}_i).
+
+The core idea is to replace a high-dimensional auxiliary vector $\mathbf{z}_i$
+with a parsimonious prediction scalar:
+\[
+  \hat{y}_i^{\text{hist}} = f_{\text{hist}}(\mathbf{z}_i).
 \]
-By calibrating on this scalar (or using it as the projection term in the difference estimator), we effectively reduce the dimensionality of the estimation problem from $p_z$ (the number of frame variables) to $1$. This "best practice" ensures that the resulting weights are well-conditioned and stable, even when the underlying historical model $f_{\text{hist}}$ is complex (e.g., a non-linear machine learning model) or highly correlated with current sample data \parencite{beaumont_bocci_2008_penalized}.
+Calibrating on this scalar (or using it as the projection term in a difference
+estimator) reduces the dimensionality of the problem from $p_z$ frame variables
+to a single summary. This tends to produce better-conditioned, more stable
+weights, even when $f_{\text{hist}}$ is complex (e.g., a non-linear machine
+learning model) or when the components of $\mathbf{z}_i$ are highly correlated
+\parencite{beaumont_bocci_2008_penalized}.
 
 \subsection{Decoupling Prediction from Correction}
-The \textbf{Hist-PPD} estimator (Scenario 4) realizes this best practice by structurally decoupling the \textit{historical anchor} from the \textit{current correction}:
+
+The \textbf{Hist-PPD} estimator (Scenario~4) illustrates this structure. It
+separates the \emph{historical anchor} from the \emph{current correction}:
 \begin{itemize}
-    \item \textbf{The Anchor (Variance Reduction):} We utilize the population sum $\sum_{i \in U} f_{\text{hist}}(\mathbf{z}_i)$ as the primary estimator. Because this term is based on the entire population, it has zero sampling variance.
-    \item \textbf{The Correction (Bias Reduction):} We use the current sample strictly to estimate the \textit{residual} $(y_i - f_{\text{hist}}(\mathbf{z}_i))$.
+  \item \textbf{Anchor (variance reduction):} use the population sum
+        $\sum_{i \in U} f_{\text{hist}}(\mathbf{z}_i)$, which has zero sampling
+        variance because it is evaluated on the frame.
+  \item \textbf{Correction (bias reduction):} use the current sample to estimate
+        the residual $(y_i - f_{\text{hist}}(\mathbf{z}_i))$.
 \end{itemize}
-This separation allows us to "borrow strength" from the historical model to reduce variance, while relying on the rich current auxiliaries $\mathbf{x}_i$ solely to correct for concept drift and nonresponse bias.
+The same anchor–correction decomposition underlies both the simple
+GREG$_{\hat y}$ estimator in Scenario~2B and the Hist-PPD / Hist-PPD-DR
+estimators in Scenarios~4–5: historical predictions stabilize the projection
+term, while current auxiliaries $\mathbf{x}_i$ are used only to correct for
+concept drift and nonresponse.
+
 
 \subsection{Valid Inference with Generated Regressors}
-A critical advantage of this framework is its statistical validity. Treating the historical prediction as a projection term explicitly acknowledges that $\hat{y}_i^{\text{hist}}$ is a "generated regressor" \parencite{pagan_1984_econometrics}. By embedding this generated variable into the projection architecture—rather than fixing it as a covariate—we facilitate valid variance estimation. The bootstrap procedure described in Section \ref{sec:variance_estimation} naturally captures the uncertainty associated with the historical model, ensuring that our confidence intervals remain honest and have correct coverage \parencite{cbs_2025_measurement}.
+
+In our setting the historical quantity
+\[
+  \hat{y}_i^{\text{hist}} = f_{\text{hist}}(\mathbf{z}_i)
+\]
+is not an ordinary auxiliary variable: it is constructed by applying a prediction model
+$f_{\text{hist}}$ fitted on historical data. In the terminology of \textcite{pagan_1984_econometrics},
+$\hat{y}_i^{\text{hist}}$ is a \emph{generated regressor}.
+
+Using $\hat{y}_i^{\text{hist}}$ as the calibration / projection variable, rather than as just another
+covariate, keeps the design-based structure of the estimator transparent. The Hist-PPD and
+Hist-PPD-DR estimators can both be written as a population-level ``anchor'' based on
+$f_{\text{hist}}(\mathbf{z}_i)$ plus a sample-based correction term involving residuals.
+
+The replication scheme in Section~\ref{sec:variance_estimation} then provides a natural way
+to obtain standard errors: each bootstrap replicate recomputes the estimator using the same
+procedure, so the resulting variance estimator reflects the additional variability induced by
+working with the generated regressor $\hat{y}_i^{\text{hist}}$. In our experiments this leads
+to confidence intervals with close-to-nominal coverage \parencite{cbs_2025_measurement}.
+
 
 
 
@@ -489,7 +492,7 @@ A critical advantage of this framework is its statistical validity. Treating the
 
 To implement the Hist-PPD-DR estimator defined in Equation \eqref{eq:s5_hist_ppd_dr}, we must specify two distinct working models: the outcome model $m_S(\mathbf{v}_i)$ used for mass imputation, and the response probability model $\hat{p}_i(\mathbf{v}_i)$ used for propensity weighting.
 
-Throughout, we adopt the standard Missing at Random (MAR) assumption for item nonresponse: $r_i \perp y_i \mid \mathbf v_i$, where $\mathbf v_i = [\mathbf z_i,\mathbf x_i]$ collects the frame and sample auxiliaries observed for every sampled unit. Under MAR it is not contradictory that the same predictor vector $\mathbf v_i$ drives both the outcome model $m_S(\mathbf v_i)$ used for imputation and the response model $\rho(\mathbf v_i) = \Pr(r_i=1 \mid \mathbf v_i)$ used for weighting. Intuitively, $\mathbf v_i$ is allowed to explain both how large $y_i$ tends to be and how likely unit $i$ is to respond; MAR only rules out any remaining dependence of $r_i$ on the unobserved part of $y_i$ once $\mathbf v_i$ is fixed. This is precisely the setup used in the survey–sampling literature on nonresponse adjustment: doubly robust and model–calibration estimators are built from one regression of $y$ on $\mathbf v_i$ and one regression of $r_i$ on $\mathbf v_i$, fitted on the same set of auxiliaries that are available for all units in the sample \parencite[e.g.,]{little_rubin_2002_samd,kim_haziza_2014_sinica,Haziza2017,kim_rao_2012_biometrika}. In our application, we follow this principle by taking $\mathbf v_i=[\mathbf z_i,\mathbf x_i]$ as the common predictor set for both the XGBoost imputation model and the logistic propensity model.
+Throughout, we adopt the standard Missing at Random (MAR) assumption for item nonresponse: $r_i \perp y_i \mid \mathbf v_i$, where $\mathbf v_i = [\mathbf z_i,\mathbf x_i]$ collects the frame and sample auxiliaries observed for every sampled unit. Under MAR it is not contradictory that the same predictor vector $\mathbf v_i$ drives both the outcome model $m_S(\mathbf v_i)$ used for imputation and the response model $p(\mathbf v_i) = \Pr(r_i=1 \mid \mathbf v_i)$ used for weighting. Intuitively, $\mathbf v_i$ is allowed to explain both how large $y_i$ tends to be and how likely unit $i$ is to respond; MAR only rules out any remaining dependence of $r_i$ on the unobserved part of $y_i$ once $\mathbf v_i$ is fixed. This is precisely the setup used in the survey–sampling literature on nonresponse adjustment: doubly robust and model–calibration estimators are built from one regression of $y$ on $\mathbf v_i$ and one regression of $r_i$ on $\mathbf v_i$, fitted on the same set of auxiliaries that are available for all units in the sample \parencite[e.g.,]{little_rubin_2002_samd,kim_haziza_2014_sinica,Haziza2017,kim_rao_2012_biometrika}. In our application, we follow this principle by taking $\mathbf v_i=[\mathbf z_i,\mathbf x_i]$ as the common predictor set for both the XGBoost imputation model and the logistic propensity model.
 
 
 Recent literature in survey sampling emphasizes that while Double Robustness protects against the misspecification of one model, the finite-sample performance of the estimator depends heavily on the stability and predictive power of these models \parencite{Haziza2017}. Consequently, we adopt a hybrid modeling strategy that leverages the strengths of machine learning for prediction and the stability of parametric estimation for weighting.
@@ -516,7 +519,7 @@ For the propensity score estimation $\hat{p}_i$, we employ a parametric logistic
     \item \textbf{Boundedness:} The logistic link function produces smooth probabilities strictly bounded away from 0 and 1 (assuming no complete separation), resulting in a more stable distribution of weights and lower variance for the final estimator.
 \end{enumerate}
 
-Therefore, our simulation utilizes XGBoost for $m_S(\cdot)$ to maximize predictive accuracy, and Logistic Regression for $\rho(\cdot)$ to ensure stability and calibration of the weights.
+Therefore, our simulation utilizes XGBoost for $m_S(\cdot)$ to maximize predictive accuracy, and Logistic Regression for $p(\cdot)$ to ensure stability and calibration of the weights.
 
 
 
@@ -527,10 +530,26 @@ Therefore, our simulation utilizes XGBoost for $m_S(\cdot)$ to maximize predicti
 
 %% Variance estimation
 \section{Variance Estimation}
+\label{sec:variance_estimation}
 
-A major challenge in using the estimator proposed in Scenario 3 is variance estimation. Standard variance formulas (e.g., Horvitz-Thompson variance) treat the completed values $y_i^\star$ as if they were observed values. This leads to the ``naive variance estimation'' problem, where the uncertainty associated with the imputation model $\hat{m}_{S_{r}}(\cdot)$ is ignored, resulting in standard errors that are too small and confidence intervals that have poor coverage \parencite{kim_rao_2012_biometrika}.
+Standard design based variance formulas treat completed outcomes (for example, mass imputed values)
+as if they were observed. This ignores the uncertainty from fitting the imputation model and can
+produce standard errors that are too small. We therefore use a replication approach.
 
-To properly account for both the sampling design and the uncertainty in the imputation mechanism, we recommend a replication-based approach, specifically the bootstrap.
+\paragraph{Design based bootstrap.}
+Let $S$ denote the realized probability sample with design weights $d_i = 1/\pi_i$.
+For $b=1,\dots,B$ we draw a bootstrap sample $S^{(b)}$ from $S$ using a design based bootstrap
+appropriate for the sampling design. In each bootstrap replicate we refit any models that would
+be refit in practice (imputation models, projection models, propensity models) and recompute the
+estimator. The bootstrap variance of an estimator $\hat\mu$ is
+\[
+\widehat{\mathrm{Var}}(\hat\mu)
+=
+\frac{1}{B-1}\sum_{b=1}^B\left(\hat\mu^{(b)}-\bar\mu_B\right)^2,
+\qquad
+\bar\mu_B=\frac{1}{B}\sum_{b=1}^B \hat\mu^{(b)}.
+\]
+
 
 \paragraph{The Bootstrap for Mass Imputation.}
 To estimate the variance of our estimators, we employ a bootstrap procedure that captures the variability of the model fitting process. The procedure is as follows:
@@ -552,12 +571,6 @@ The variance estimator is then the empirical variance of the $B$ bootstrap estim
 \end{equation}
 where $\bar{\hat{\mu}}$ is the mean of the bootstrap replicates. This method is asymptotically consistent and automatically captures the additional variance introduced by the imputation and projection steps.
 
-
-
-
-
-
-\section{Simulation}
 
 
 \subsection{Bootstrap implementation for each estimator}
@@ -667,65 +680,221 @@ In this case both working models are re-estimated for every bootstrap replicate:
 
 This estimator by estimator description makes explicit which parts of each procedure are treated as random in the bootstrap. In particular, whenever an estimator would involve fitting a regression or propensity model in practice, that model is refit inside every bootstrap replicate; fixed frame information and historical models are not resampled.
 
-\subsection{Simulation Setup}
-We employ a four-step data generation process to create a finite population, draw samples, induce non-response, and compute estimates. We repeat this process $K=2,000$ times to approximate the sampling distribution of the estimators.
 
-\paragraph{Data Generation Process.}
-We generate a finite population $U$ of size $N=10,000$. Following the simulation designs of \textcite{Haziza2017}, we utilize Gamma distributions to mimic the right-skewed nature of business survey data (e.g., revenue or production).
+% ------------------------------------------------- %
+% ---------------- SIMULATION STUDY --------------- %
+% ------------------------------------------------- %
+\section{Simulation Study}
+\label{sec:simulation}
 
-\begin{itemize}
-    \item \textbf{Historical Administrative Data ($z_i$):} 
-    We generate a historical variable $z_i$ (representing, for example, previous census revenue) from a Gamma distribution with shape $\alpha=2$ and scale $\beta=10$:
-    \[ z_i \sim \text{Gamma}(2, 10) \]
-    This results in a strictly positive, right-skewed distribution with a mean of 20, typical of economic populations.
-    
-    \item \textbf{Current Signal ($x_i$):} 
-    We generate the current signal $x_i$ (e.g., a real-time auxiliary signal) as a function of the history, subject to drift. We use an additive error structure with a positive distribution to ensure $x_i$ remains strictly positive:
-    \[ x_i = 0.8 z_i + \epsilon_{x,i} \]
-    where $\epsilon_{x,i} \sim \text{Exponential}(5)$. This creates a strong positive correlation ($\rho \approx 0.7$) between the past and present, reflecting a stable but evolving population.
-    
-    \item \textbf{Outcome Variable ($y_i$):} 
-    We generate the current outcome of interest $y_i$ as a function of both the historical anchor and the current signal:
-    \[ y_i = 2 + 0.5 z_i + 1.5 x_i + \epsilon_{y,i} \]
-    where $\epsilon_{y,i} \sim N(0, 5)$. This setup ensures that while history ($z_i$) is predictive, the current signal ($x_i$) contains unique, necessary information to capture the true outcome.
-    
-    \item \textbf{Sampling ($S$):} 
-    From the population, we draw a probability sample $S$ of size $n=500$ using Simple Random Sampling (SRS).
-    
-    \item \textbf{Non-response ($r_i$):} 
-    We introduce item non-response using a logistic propensity model. To simulate informative missingness often found in business surveys (where unit size affects response behavior), we model the response probability as a function of the current signal $x_i$:
-    \[ \text{logit}(\Pr(r_i=1)) = -1 + 0.1 x_i \]
-    This induces a Missing at Random (MAR) mechanism. Crucially, because response depends on $x_i$, and $y_i$ depends on $x_i$, the observed set of respondents is systematically biased. Estimators that fail to account for $x_i$ will therefore yield biased inference.
-\end{itemize}
+We conduct Monte Carlo simulations under a finite population design to evaluate the estimators
+defined in Scenarios~1 to~5. In each experiment we generate a finite population $U$ of size $N$,
+draw a probability sample $S$ of size $n$, induce item nonresponse in $y_i$, compute point estimates,
+and construct confidence intervals using the bootstrap variance estimator in
+Section~\ref{sec:variance_estimation}. The target parameter is the finite population mean
+\[
+\mu = \frac{1}{N}\sum_{i\in U} y_i.
+\]
 
+\subsection{Benchmark data generating models}
+\label{subsec:sim_dgp}
 
-\subsection{Evaluation Metrics}
+Each benchmark specifies an underlying covariate vector $\mathbf{w}_i$ and an outcome
+\[
+y_i = g(\mathbf{w}_i) + \varepsilon_i,
+\]
+with independent errors. We use the following benchmark functions.
 
-We assess the performance of each estimator using three standard statistical metrics. Let $\hat{\theta}_k$ be the estimate from the $k$-th simulation run and $\theta$ be the true population total.
+\paragraph{Multi linear (5 covariates).}
+Draw $w_{ij}\sim \mathcal{U}(0,1)$ for $j=1,\dots,5$ and define
+\[
+y_i = \sum_{j=1}^5 w_{ij} + \varepsilon_i,
+\qquad \varepsilon_i\sim \mathcal{N}(0,0.1^2).
+\]
 
-We measure systematic error using Relative Bias (RB). Values close to 0\% indicate unbiasedness; generally, an absolute relative bias greater than 5\% is considered problematic in official statistics.
-\[ \text{RB}(\hat{\theta}) = \frac{1}{K} \sum_{k=1}^{K} \left( \frac{\hat{\theta}_k - \theta}{\theta} \right) \times 100\% \]
+\paragraph{Friedman1 (5 covariates).}
+Draw $w_{ij}\sim \mathcal{U}(0,1)$ for $j=1,\dots,5$ and define
+\[
+y_i = 10\sin(\pi w_{i1}w_{i2}) + 20(w_{i3}-0.5)^2 + 10w_{i4} + 5w_{i5} + \varepsilon_i,
+\qquad \varepsilon_i\sim \mathcal{N}(0,0.1^2).
+\]
 
-We measure efficiency using Relative Root Mean Square Error (RRMSE), which captures the combined effect of bias and variance.
-\[ \text{RRMSE}(\hat{\theta}) = \sqrt{ \frac{1}{K} \sum_{k=1}^{K} \left( \frac{\hat{\theta}_k - \theta}{\theta} \right)^2 } \times 100\% \]
+\paragraph{Friedman2 (4 covariates).}
+Draw
+\[
+w_{i1}\sim \mathcal{U}(0,100),\quad
+w_{i2}\sim \mathcal{U}(40\pi,560\pi),\quad
+w_{i3}\sim \mathcal{U}(0,1),\quad
+w_{i4}\sim \mathcal{U}(1,11),
+\]
+and define
+\[
+y_i = \sqrt{w_{i1}^2 + \left(w_{i2}w_{i3} - \frac{1}{w_{i2}w_{i4}}\right)^2} + \varepsilon_i,
+\qquad \varepsilon_i\sim \mathcal{N}(0,0.1^2).
+\]
 
-Finally, we evaluate uncertainty quantification using the Coverage Rate (CR), 
-\[ \text{CR} = \frac{1}{K} \sum_{k=1}^{K} \mathbbm{1}\{ \theta \in [\hat{\theta}_k \pm 1.96 \sqrt{\widehat{V}_k}] \} \]
-defined as the proportion of simulation runs where the 95\% confidence interval contains the true population value. A valid estimator should have a coverage rate close to 95\%.
+\paragraph{Friedman3 (4 covariates).}
+Using the same supports as Friedman2, define
+\[
+y_i = \arctan\!\left(\frac{w_{i2}w_{i3} - \frac{1}{w_{i2}w_{i4}}}{w_{i1}}\right) + \varepsilon_i,
+\qquad \varepsilon_i\sim \mathcal{N}(0,0.1^2).
+\]
 
-\subsection{Comparisons}
+\paragraph{Haziza1 (4 covariates).}
+Draw $w_{ij}\sim \mathcal{U}(-100,100)$ for $j=1,\dots,4$ and define
+\[
+y_i = 2 + w_{i1}^2 + w_{i2}^2 + w_{i3}^3 + w_{i4} + \varepsilon_i,
+\qquad \varepsilon_i\sim \mathcal{N}(0,1).
+\]
 
-We compare five distinct estimators to isolate the contributions of historical data, current signals, and robust corrections:
+\paragraph{Haziza2 (4 covariates).}
+Draw $w_{ij}\sim \mathcal{U}(-100,100)$ for $j=1,\dots,4$ and define
+\[
+y_i = 2 + 2w_{i1} + 5w_{i2} + w_{i1}^2 w_{i3}^2 w_{i4}^2 + \varepsilon_i,
+\qquad \varepsilon_i\sim \mathcal{N}(0,1).
+\]
 
-\begin{enumerate}
-    \item \textbf{Naive Estimator:} The standard Horvitz-Thompson estimator using only the respondents $S_r$. It ignores missingness and makes no use of auxiliary data.
-    \item \textbf{Weighting Only (NWA):} The standard IPW estimator that adjusts for non-response using propensity scores $\hat{p}_i(x_i, z_i)$, but utilizes no outcome modeling (Scenario 1).
-    \item \textbf{Standard Hist-GREG:} The classical generalized regression estimator using only historical data $z_i$ for the projection. It ignores the rich current signals $x_i$ inside the imputation model (Scenario 2).
-    \item \textbf{Mass Imputation (Two-Step):} The projection estimator that uses current signals $x_i$ to impute missing values, but lacks the propensity score correction for double robustness (Scenario 3, also the Hist-PPD).
-    
-    
-    \item \textbf{Hist-PPD-DR:} The proposed approach which integrates all available information. It uses $z_i$ for the population anchor, $x_i$ for mass imputation, and propensity weights for residual bias correction.
-\end{enumerate}
+\subsection{Frame variables, sample only variables, and drift}
+\label{subsec:sim_covariates}
+
+To reflect the distinction used throughout the paper, we split $\mathbf{w}_i$ into
+frame variables $\mathbf{z}_i$ and sample only variables $\mathbf{x}_i$ as follows.
+
+For the 5 covariate benchmarks, define
+\[
+\mathbf{z}_i = (w_{i1}, w_{i2})^\top,\qquad \mathbf{x}_i = (w_{i3}, w_{i4}, w_{i5})^\top.
+\]
+For the 4 covariate benchmarks, define
+\[
+\mathbf{z}_i = (w_{i1}, w_{i2})^\top,\qquad \mathbf{x}_i = (w_{i3}, w_{i4})^\top.
+\]
+In the simulation we generate the full $\mathbf{w}_i$ for every unit in $U$, but the estimators are
+restricted to the same information pattern as in the paper: $\mathbf{z}_i$ is treated as known on
+the full population and $\mathbf{x}_i$ is treated as observed only for sampled units.
+
+To create a simple and controlled form of drift, we use different distributions for the sample only
+components across the historical and current periods. Specifically, in the historical data we draw
+all covariates according to the benchmark distributions above. In the current population we draw
+the frame components using the same benchmark distributions, but we draw each sample only component
+by transforming a $\mathrm{Beta}(2,5)$ variable onto the benchmark support. This changes the
+distribution of $\mathbf{x}_i$ across periods while holding the support fixed.
+
+\subsection{Finite population and sampling}
+\label{subsec:sim_sampling}
+
+For each benchmark model we generate one finite population $U$ of size $N=20{,}000$ and compute the
+true finite population mean $\mu$. We then run sampling experiments for sample sizes
+\[
+n \in \{50, 100,\ 500,\ 2{,}000\},
+\]
+and for each $n$ we repeat the experiment for $K$ Monte Carlo replicates. We use simple random
+sampling without replacement. Under this design, $\pi_i = n/N$ and $d_i = N/n$.
+
+\subsection{Item nonresponse mechanism}
+\label{subsec:sim_nonresponse}
+
+Within each realized sample $S$ we generate the item response indicator $r_i$ using a logistic
+propensity model that depends on sample only variables. Let $x_{i1}$ denote the first coordinate of
+$\mathbf{x}_i$ and define a standardized index
+\[
+u_i = \frac{x_{i1} - \bar{x}_{1,S}}{s_{1,S}},
+\]
+where $\bar{x}_{1,S}$ and $s_{1,S}$ are the sample mean and sample standard deviation of $x_{i1}$
+over the realized sample $S$. We then set
+\[
+\Pr(r_i=1 \mid \mathbf{z}_i,\mathbf{x}_i) = p_i,
+\qquad
+\mathrm{logit}(p_i) = \eta_0 + \eta_1 u_i,
+\]
+with $\eta_1 = 0.7$ and $\eta_0 = \mathrm{logit}(0.65)$. This produces a response rate close to 65\%
+and makes response systematically related to a size like covariate.
+Because $r_i$ depends only on $\mathbf{x}_i$ and $\mathbf{x}_i$ enters $y_i$ through $g(\mathbf{w}_i)$,
+respondent only estimators are biased, and estimators that do not account for $\mathbf{x}_i$ are not
+well protected under this mechanism.
+
+\subsection{Pretrained historical model}
+\label{subsec:sim_pretrain}
+
+For each benchmark we generate an external historical dataset of size $N_{\mathrm{hist}}=100{,}000$
+using the historical covariate distribution described in Section~\ref{subsec:sim_covariates}. We fit
+a prediction function $f_{\text{hist}}(\mathbf{z})$ using XGBoost regression with a 70/30
+train validation split and hyperparameter tuning via \texttt{Optuna} (10 trials). The fitted
+function is then treated as fixed and used to produce historical predictions for all units in the
+population,
+\[
+\hat y_i^{\text{hist}} = f_{\text{hist}}(\mathbf{z}_i),
+\qquad i\in U.
+\]
+
+\subsection{Estimators computed}
+\label{subsec:sim_estimators}
+
+We report results for two experiment types.
+
+\paragraph{Complete response experiments.}
+We set $r_i=1$ for all sampled units and compare the complete response estimators HT
+(Equation~\eqref{eq:baseline_ht}), GREG, PPD, GREG$_{\hat y}$ (Equation~\eqref{eq:s2_greg_yhat_complete}),
+and model calibrated estimation, as defined in Section~\ref{subsubsec:sim_estimators}.
+
+\paragraph{Item nonresponse experiments.}
+We generate $r_i$ as in Section~\ref{subsec:sim_nonresponse} and compare:
+the naive respondent only estimator, the nonresponse weighting estimator NWA
+(Equation~\eqref{eq:s1_nwa}), the standard NR GREG estimator using only frame variables
+(Equation~\eqref{eq:s2_greg}), the two stage mass imputation projection estimator
+(Equation~\eqref{eq:s3_mass_imp}), Hist PPD (Equation~\eqref{eq:s4_hist_ppd}), and the proposed
+Hist PPD DR estimator (Equation~\eqref{eq:s5_hist_ppd_dr}).
+
+\subsection{Variance estimation and confidence intervals}
+\label{subsec:sim_variance}
+
+For each estimator and each Monte Carlo replicate we estimate variance using the design based
+bootstrap described in Section~\ref{sec:variance_estimation}. In each bootstrap replicate we refit
+any models that would be re estimated in practice. The historical function $f_{\text{hist}}$ and the
+population level frame data $\{\mathbf{z}_i : i\in U\}$ are treated as fixed.
+
+We form nominal 95\% confidence intervals of the form
+\[
+\left[\hat\mu - 1.96\sqrt{\widehat{\mathrm{Var}}(\hat\mu)},\ \hat\mu + 1.96\sqrt{\widehat{\mathrm{Var}}(\hat\mu)}\right].
+\]
+
+\subsection{Performance metrics}
+\label{subsec:sim_metrics}
+
+Let $\hat\mu_k$ denote the estimate in Monte Carlo replicate $k=1,\dots,K$ and let $\widehat{V}_k$
+denote its bootstrap variance estimate. We report:
+
+\paragraph{Relative bias.}
+\[
+\mathrm{RB}(\hat\mu)
+=
+100 \times \frac{1}{K}\sum_{k=1}^K \frac{\hat\mu_k - \mu}{\mu}.
+\]
+
+\paragraph{Relative root mean squared error.}
+\[
+\mathrm{RRMSE}(\hat\mu)
+=
+100 \times
+\sqrt{\frac{1}{K}\sum_{k=1}^K \left(\frac{\hat\mu_k - \mu}{\mu}\right)^2 }.
+\]
+
+\paragraph{Empirical coverage.}
+\[
+\mathrm{EC}(\hat\mu)
+=
+\frac{100}{K}\sum_{k=1}^K
+\mathbbm{1}\left\{
+\mu \in \left[\hat\mu_k - 1.96\sqrt{\widehat{V}_k},\ \hat\mu_k + 1.96\sqrt{\widehat{V}_k}\right]
+\right\}.
+\]
+
+\paragraph{Mean confidence interval width.}
+\[
+\mathrm{CIW}(\hat\mu)
+=
+\frac{1}{K}\sum_{k=1}^K 2\times 1.96\sqrt{\widehat{V}_k}.
+\]
+
 
 
 
